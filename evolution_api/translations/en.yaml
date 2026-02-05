@@ -14,27 +14,22 @@ configuration:
     name: Log Level
     description: >-
       Logging verbosity. Use DEBUG for troubleshooting, INFO for normal operation.
-  database_provider:
-    name: Database Provider
-    description: >-
-      Database type. Requires MariaDB or PostgreSQL add-on to be installed.
   database_host:
     name: Database Host
     description: >-
-      Database server hostname. Use 'core-mariadb' for the official MariaDB add-on
-      or 'core-postgresql' for PostgreSQL.
+      MariaDB server hostname. Use 'core-mariadb' for the official MariaDB add-on.
   database_port:
     name: Database Port
-    description: Database server port (typically 3306 for MariaDB, 5432 for PostgreSQL).
+    description: MariaDB server port (typically 3306).
   database_name:
     name: Database Name
-    description: Name of the database to use. You must create this database first.
+    description: Name of the database to use. You must create this database first in MariaDB.
   database_user:
     name: Database User
-    description: Database username with full access to the database.
+    description: MariaDB username with full access to the database.
   database_password:
     name: Database Password
-    description: Password for the database user.
+    description: Password for the MariaDB user.
   redis_uri:
     name: Redis URI
     description: >-

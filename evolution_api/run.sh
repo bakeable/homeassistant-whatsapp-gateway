@@ -97,14 +97,13 @@ else
 fi
 log_info "Log level: ${LOG_LEVEL}"
 
-# Database configuration (REQUIRED)
+# Database configuration (REQUIRED - MariaDB/MySQL only)
 if [ "$IN_HA" = true ]; then
     log_info "Reading database configuration..."
     
     # Try to read from bashio if available
     if [ "$BASHIO_AVAILABLE" = true ]; then
         log_info "Using bashio to read configuration"
-        DB_PROVIDER=$(bashio::config 'database_provider' 2>/dev/null || echo "")
         DB_HOST=$(bashio::config 'database_host' 2>/dev/null || echo "")
         DB_PORT=$(bashio::config 'database_port' 2>/dev/null || echo "")
         DB_NAME=$(bashio::config 'database_name' 2>/dev/null || echo "")
@@ -115,15 +114,13 @@ if [ "$IN_HA" = true ]; then
     # If bashio failed or not available, try reading from options.json directly
     if [ -z "$DB_PASS" ] && [ -f /data/options.json ]; then
         log_info "Reading configuration from /data/options.json"
-        DB_PROVIDER=$(jq -r '.database_provider // "mysql"' /data/options.json)
         DB_HOST=$(jq -r '.database_host // "core-mariadb"' /data/options.json)
         DB_PORT=$(jq -r '.database_port // 3306' /data/options.json)
         DB_NAME=$(jq -r '.database_name // "evolution"' /data/options.json)
-        DB_USER=$(jq -r '.database_user // "homeassistant"' /data/options.json)
+        DB_USER=$(jq -r '.database_user // "evolution"' /data/options.json)
         DB_PASS=$(jq -r '.database_password // ""' /data/options.json)
     fi
     
-    log_info "Database provider: ${DB_PROVIDER}"
     log_info "Database host: ${DB_HOST}"
     log_info "Database port: ${DB_PORT}"
     log_info "Database name: ${DB_NAME}"
@@ -132,8 +129,7 @@ if [ "$IN_HA" = true ]; then
     if [ -z "$DB_PASS" ]; then
         log_error "Database password is empty or not set!"
         log_error ""
-        log_error "Current configuration read from settings:"
-        log_error "  Provider: ${DB_PROVIDER:-<not set>}"
+        log_error "Current configuration:"
         log_error "  Host: ${DB_HOST:-<not set>}"
         log_error "  Port: ${DB_PORT:-<not set>}"
         log_error "  Database: ${DB_NAME:-<not set>}"
@@ -141,26 +137,16 @@ if [ "$IN_HA" = true ]; then
         log_error "  Password: <empty or not set>"
         log_error ""
         log_error "To fix this:"
-        log_error "  1. Go to the add-on Configuration tab"
-        log_error "  2. Set 'database_password' to match your MariaDB password"
-        log_error "  3. Click 'Save' (not just change the value!)"
-        log_error "  4. Restart the add-on"
-        log_error ""
-        log_error "If using MariaDB add-on, the default values should work:"
-        log_error "  - database_host: core-mariadb"
-        log_error "  - database_user: homeassistant"
-        log_error "  - database_name: evolution"
-        log_error "  - database_password: <your MariaDB password>"
+        log_error "  1. Install the MariaDB add-on and create a database"
+        log_error "  2. Go to this add-on's Configuration tab"
+        log_error "  3. Set database credentials to match your MariaDB setup"
+        log_error "  4. Click 'Save' and restart"
         exit 1
     fi
     
     export DATABASE_ENABLED="true"
-    export DATABASE_PROVIDER="${DB_PROVIDER}"
-    if [ "$DB_PROVIDER" = "mysql" ]; then
-        export DATABASE_CONNECTION_URI="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-    else
-        export DATABASE_CONNECTION_URI="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-    fi
+    export DATABASE_PROVIDER="mysql"
+    export DATABASE_CONNECTION_URI="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
     export DATABASE_SAVE_DATA_INSTANCE="true"
     export DATABASE_SAVE_DATA_NEW_MESSAGE="true"
@@ -169,9 +155,9 @@ if [ "$IN_HA" = true ]; then
     export DATABASE_SAVE_DATA_CHATS="true"
     export DATABASE_SAVE_DATA_LABELS="true"
     export DATABASE_SAVE_DATA_HISTORIC="true"
-    log_info "Database configured: ${DB_PROVIDER}://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    log_info "Database configured: mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
 elif [ -n "$DATABASE_CONNECTION_URI" ]; then
-    export DATABASE_PROVIDER="${DATABASE_PROVIDER:-mysql}"
+    export DATABASE_PROVIDER="mysql"
     export DATABASE_ENABLED="true"
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
     export DATABASE_SAVE_DATA_INSTANCE="true"
@@ -184,7 +170,7 @@ elif [ -n "$DATABASE_CONNECTION_URI" ]; then
     log_info "Database configured from environment"
 else
     log_error "Database configuration is required!"
-    log_error "Please configure database settings in add-on options"
+    log_error "Please configure MariaDB settings in add-on options"
     exit 1
 fi
 
