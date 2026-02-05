@@ -154,6 +154,7 @@ if [ "$IN_HA" = true ]; then
         exit 1
     fi
     
+    export DATABASE_ENABLED="true"
     export DATABASE_PROVIDER="${DB_PROVIDER}"
     if [ "$DB_PROVIDER" = "mysql" ]; then
         export DATABASE_CONNECTION_URI="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
@@ -161,10 +162,25 @@ if [ "$IN_HA" = true ]; then
         export DATABASE_CONNECTION_URI="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
     fi
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
+    export DATABASE_SAVE_DATA_INSTANCE="true"
+    export DATABASE_SAVE_DATA_NEW_MESSAGE="true"
+    export DATABASE_SAVE_MESSAGE_UPDATE="true"
+    export DATABASE_SAVE_DATA_CONTACTS="true"
+    export DATABASE_SAVE_DATA_CHATS="true"
+    export DATABASE_SAVE_DATA_LABELS="true"
+    export DATABASE_SAVE_DATA_HISTORIC="true"
     log_info "Database configured: ${DB_PROVIDER}://${DB_HOST}:${DB_PORT}/${DB_NAME}"
 elif [ -n "$DATABASE_CONNECTION_URI" ]; then
     export DATABASE_PROVIDER="${DATABASE_PROVIDER:-mysql}"
+    export DATABASE_ENABLED="true"
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
+    export DATABASE_SAVE_DATA_INSTANCE="true"
+    export DATABASE_SAVE_DATA_NEW_MESSAGE="true"
+    export DATABASE_SAVE_MESSAGE_UPDATE="true"
+    export DATABASE_SAVE_DATA_CONTACTS="true"
+    export DATABASE_SAVE_DATA_CHATS="true"
+    export DATABASE_SAVE_DATA_LABELS="true"
+    export DATABASE_SAVE_DATA_HISTORIC="true"
     log_info "Database configured from environment"
 else
     log_error "Database configuration is required!"
