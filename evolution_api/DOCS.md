@@ -42,28 +42,43 @@ If you have an existing MySQL/MariaDB server on your network, you can use that i
 
 ### Required Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `database_provider` | Database type (mysql or postgresql) | `mysql` |
-| `database_host` | Database hostname | `core-mariadb` |
-| `database_port` | Database port | `3306` |
-| `database_name` | Database name | `evolution` |
-| `database_user` | Database username | `evolution` |
-| `database_password` | Database password | _(required)_ |
+| Option              | Description                         | Default        |
+| ------------------- | ----------------------------------- | -------------- |
+| `database_provider` | Database type (mysql or postgresql) | `mysql`        |
+| `database_host`     | Database hostname                   | `core-mariadb` |
+| `database_port`     | Database port                       | `3306`         |
+| `database_name`     | Database name                       | `evolution`    |
+| `database_user`     | Database username                   | `evolution`    |
+| `database_password` | Database password                   | _(required)_   |
 
 ### Optional Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `api_key` | API authentication key (auto-generated if empty) | _(empty)_ |
-| `webhook_url` | Global webhook URL for all events | _(empty)_ |
-| `redis_uri` | Redis connection for caching (optional) | _(empty)_ |
-| `log_level` | Logging verbosity | `INFO` |
+| Option        | Description                                      | Default   |
+| ------------- | ------------------------------------------------ | --------- |
+| `api_key`     | API authentication key (auto-generated if empty) | _(empty)_ |
+| `instance_name` | Name for the WhatsApp instance                 | `Home`    |
+| `webhook_url` | Global webhook URL for all events                | _(empty)_ |
+| `redis_uri`   | Redis connection for caching (optional)          | _(empty)_ |
+| `log_level`   | Logging verbosity                                | `INFO`    |
+
+### Instance Settings
+
+These settings are automatically applied to the WhatsApp instance:
+
+| Option              | Description                                      | Default |
+| ------------------- | ------------------------------------------------ | ------- |
+| `sync_full_history` | Sync all chat history when connecting            | `true`  |
+| `reject_calls`      | Auto-reject incoming calls                       | `false` |
+| `groups_ignore`     | Ignore messages from groups                      | `false` |
+| `always_online`     | Show as always online in WhatsApp                | `false` |
+| `read_messages`     | Auto-mark messages as read                       | `false` |
+| `read_status`       | Auto-view status updates                         | `false` |
 
 ### Example Configuration
 
 ```yaml
 api_key: "my-secret-api-key"
+instance_name: "Home"
 database_provider: mysql
 database_host: core-mariadb
 database_port: 3306
@@ -72,6 +87,13 @@ database_user: evolution
 database_password: "your-secure-password"
 webhook_url: "http://homeassistant.local:8123/api/webhook/whatsapp_incoming"
 log_level: INFO
+# Instance settings
+sync_full_history: true
+reject_calls: false
+groups_ignore: false
+always_online: false
+read_messages: false
+read_status: false
 ```
 
 ### MariaDB Add-on Setup
@@ -154,7 +176,7 @@ action:
       sender_jid: "{{ trigger.json.data.key.remoteJid | default('unknown') }}"
       from_me: "{{ trigger.json.data.key.fromMe | default(false) }}"
   - condition: template
-    value_template: "{{ not from_me }}"  # Only process messages from others
+    value_template: "{{ not from_me }}" # Only process messages from others
   - service: logbook.log
     data:
       name: "WhatsApp"

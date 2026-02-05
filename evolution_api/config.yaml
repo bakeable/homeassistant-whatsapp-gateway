@@ -33,6 +33,7 @@ map:
 # User-configurable options
 options:
   api_key: ""
+  instance_name: "Home"
   webhook_url: ""
   log_level: "INFO"
   database_provider: "mysql"
@@ -42,10 +43,18 @@ options:
   database_user: "evolution"
   database_password: ""
   redis_uri: ""
+  # Instance settings
+  sync_full_history: true
+  reject_calls: false
+  groups_ignore: false
+  always_online: false
+  read_messages: false
+  read_status: false
 
 # Schema for options validation
 schema:
   api_key: str?
+  instance_name: str
   webhook_url: url?
   log_level: list(DEBUG|INFO|WARN|ERROR)
   database_provider: list(mysql|postgresql)
@@ -55,6 +64,13 @@ schema:
   database_user: str
   database_password: password
   redis_uri: str?
+  # Instance settings
+  sync_full_history: bool
+  reject_calls: bool
+  groups_ignore: bool
+  always_online: bool
+  read_messages: bool
+  read_status: bool
 
 # Watchdog for auto-restart on failure
 watchdog: http://[HOST]:[PORT:8080]/

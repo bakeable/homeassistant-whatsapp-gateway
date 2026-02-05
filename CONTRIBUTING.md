@@ -47,12 +47,14 @@ Please be respectful and constructive in all interactions.
 ### Testing Locally
 
 1. Clone your fork:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/ha-add-on-whatsapp-api.git
    cd ha-add-on-whatsapp-api
    ```
 
 2. Build the Docker image:
+
    ```bash
    cd evolution_api
    docker build \
@@ -61,6 +63,7 @@ Please be respectful and constructive in all interactions.
    ```
 
 3. Run the container:
+
    ```bash
    docker run -it --rm \
      -p 8080:8080 \
@@ -86,6 +89,7 @@ Please be respectful and constructive in all interactions.
 Releases are automated via GitHub Actions when changes are merged to `main`.
 
 To bump version:
+
 1. Update `version` in `evolution_api/config.yaml`
 2. Create PR and merge to main
 3. CI will create a GitHub release

@@ -167,6 +167,31 @@ export QRCODE_COLOR="#000000"
 export LANGUAGE="en"
 
 # ==============================================================================
+# Instance settings (will be applied after API starts)
+# ==============================================================================
+
+if [ "$IN_HA" = true ]; then
+    export INSTANCE_NAME=$(bashio::config 'instance_name')
+    export SYNC_FULL_HISTORY=$(bashio::config 'sync_full_history')
+    export REJECT_CALLS=$(bashio::config 'reject_calls')
+    export GROUPS_IGNORE=$(bashio::config 'groups_ignore')
+    export ALWAYS_ONLINE=$(bashio::config 'always_online')
+    export READ_MESSAGES=$(bashio::config 'read_messages')
+    export READ_STATUS=$(bashio::config 'read_status')
+else
+    export INSTANCE_NAME="${INSTANCE_NAME:-Home}"
+    export SYNC_FULL_HISTORY="${SYNC_FULL_HISTORY:-true}"
+    export REJECT_CALLS="${REJECT_CALLS:-false}"
+    export GROUPS_IGNORE="${GROUPS_IGNORE:-false}"
+    export ALWAYS_ONLINE="${ALWAYS_ONLINE:-false}"
+    export READ_MESSAGES="${READ_MESSAGES:-false}"
+    export READ_STATUS="${READ_STATUS:-false}"
+fi
+
+log_info "Instance name: ${INSTANCE_NAME}"
+log_info "Sync full history: ${SYNC_FULL_HISTORY}"
+
+# ==============================================================================
 # Start the application
 # ==============================================================================
 
@@ -187,6 +212,55 @@ else
     }
 fi
 
-# Start the API
+# Function to configure instance after API is ready
+configure_instance() {
+    log_info "Waiting for API to be ready..."
+    for i in $(seq 1 30); do
+        if curl -s "http://localhost:${SERVER_PORT}/" > /dev/null 2>&1; then
+            log_info "API is ready, configuring instance..."
+            
+            # Check if instance exists
+            INSTANCE_EXISTS=$(curl -s "http://localhost:${SERVER_PORT}/instance/fetchInstances" \
+                -H "apikey: ${AUTHENTICATION_API_KEY}" | grep -c "${INSTANCE_NAME}" || true)
+            
+            if [ "$INSTANCE_EXISTS" = "0" ]; then
+                # Create instance
+                log_info "Creating instance '${INSTANCE_NAME}'..."
+                curl -s -X POST "http://localhost:${SERVER_PORT}/instance/create" \
+                    -H "Content-Type: application/json" \
+                    -H "apikey: ${AUTHENTICATION_API_KEY}" \
+                    -d "{\"instanceName\": \"${INSTANCE_NAME}\", \"integration\": \"WHATSAPP-BAILEYS\"}" > /dev/null
+            fi
+            
+            # Apply instance settings
+            log_info "Applying instance settings..."
+            curl -s -X POST "http://localhost:${SERVER_PORT}/settings/set/${INSTANCE_NAME}" \
+                -H "Content-Type: application/json" \
+                -H "apikey: ${AUTHENTICATION_API_KEY}" \
+                -d "{
+                    \"rejectCall\": ${REJECT_CALLS},
+                    \"groupsIgnore\": ${GROUPS_IGNORE},
+                    \"alwaysOnline\": ${ALWAYS_ONLINE},
+                    \"readMessages\": ${READ_MESSAGES},
+                    \"readStatus\": ${READ_STATUS},
+                    \"syncFullHistory\": ${SYNC_FULL_HISTORY}
+                }" > /dev/null
+            
+            log_info "Instance '${INSTANCE_NAME}' configured successfully"
+            return 0
+        fi
+        sleep 2
+    done
+    log_warning "API did not become ready in time, instance not auto-configured"
+}
+
+# Start the API in background, configure instance, then wait
 log_info "Starting Evolution API on port ${SERVER_PORT}..."
-exec node dist/main.js
+node dist/main.js &
+API_PID=$!
+
+# Configure instance in background
+(configure_instance) &
+
+# Wait for the API process
+wait $API_PID

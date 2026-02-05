@@ -15,6 +15,7 @@ WhatsApp API integration for Home Assistant using Evolution API.
 This add-on runs [Evolution API](https://github.com/EvolutionAPI/evolution-api), providing a REST API and Web UI to send and receive WhatsApp messages from your Home Assistant automations.
 
 **Features:**
+
 - 📱 Link your WhatsApp account via QR code
 - 📤 Send messages to contacts and groups
 - 📥 Receive messages via webhooks

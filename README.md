@@ -33,6 +33,7 @@ WhatsApp API integration using [Evolution API](https://github.com/EvolutionAPI/e
 **⚠️ Requires MariaDB database** - Install the official MariaDB add-on first.
 
 **Features:**
+
 - 📱 Connect WhatsApp via QR code (Baileys/WhatsApp Web protocol)
 - 📤 Send text messages, media, and more
 - 📥 Receive messages via webhooks

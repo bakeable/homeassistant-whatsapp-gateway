@@ -1,16 +1,17 @@
 services:
-  postgres:
-    container_name: evolution_postgres
-    image: postgres:15-alpine
+  mariadb:
+    container_name: evolution_mariadb
+    image: mariadb:10.11
     restart: unless-stopped
     environment:
-      POSTGRES_USER: evolution
-      POSTGRES_PASSWORD: evolution_pass
-      POSTGRES_DB: evolution
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_USER: evolution
+      MYSQL_PASSWORD: evolution_pass
+      MYSQL_DATABASE: evolution
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,15 +42,15 @@ services:
       SERVER_TYPE: http
       SERVER_PORT: 8080
       SERVER_URL: http://localhost:8080
-      
+
       # Authentication
       AUTHENTICATION_API_KEY: test-api-key-change-me
       AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
-      
+
       # Database
       DATABASE_ENABLED: "true"
-      DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://evolution:evolution_pass@postgres:5432/evolution
+      DATABASE_PROVIDER: mysql
+      DATABASE_CONNECTION_URI: mysql://evolution:evolution_pass@mariadb:3306/evolution
       DATABASE_CONNECTION_CLIENT_NAME: evolution_api
       DATABASE_SAVE_DATA_INSTANCE: "true"
       DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
@@ -58,17 +59,17 @@ services:
       DATABASE_SAVE_DATA_CHATS: "true"
       DATABASE_SAVE_DATA_LABELS: "true"
       DATABASE_SAVE_DATA_HISTORIC: "true"
-      
+
       # Redis Cache
       CACHE_REDIS_ENABLED: "true"
       CACHE_REDIS_URI: redis://redis:6379/0
       CACHE_REDIS_PREFIX_KEY: evolution
       CACHE_REDIS_SAVE_INSTANCES: "false"
       CACHE_LOCAL_ENABLED: "false"
-      
+
       # Logging
       LOG_LEVEL: INFO
-      
+
       # Other settings
       DEL_INSTANCE: "false"
       RABBITMQ_ENABLED: "false"
@@ -80,13 +81,13 @@ services:
       - evolution_instances:/evolution/instances
       - evolution_data:/data
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  mariadb_data:
   redis_data:
   evolution_instances:
   evolution_data:
