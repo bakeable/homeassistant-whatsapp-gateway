@@ -6,13 +6,29 @@
 
 set -e
 
-# Source bashio if available (running in HA), otherwise use defaults
+# Detect if running in Home Assistant
+IN_HA=false
+
+# Check for bashio
 if [ -f /usr/bin/bashio ]; then
-    source /usr/bin/bashio
-    IN_HA=true
+    echo "[DEBUG] Found bashio at /usr/bin/bashio"
+    if source /usr/bin/bashio 2>&1; then
+        echo "[DEBUG] Successfully sourced bashio"
+        IN_HA=true
+    else
+        echo "[ERROR] Failed to source bashio"
+    fi
 else
-    IN_HA=false
+    echo "[DEBUG] bashio not found at /usr/bin/bashio"
 fi
+
+# Also check for SUPERVISOR_TOKEN as fallback
+if [ -n "$SUPERVISOR_TOKEN" ]; then
+    echo "[DEBUG] SUPERVISOR_TOKEN detected"
+    IN_HA=true
+fi
+
+echo "[DEBUG] IN_HA=${IN_HA}"
 
 log_info() {
     if [ "$IN_HA" = true ]; then
@@ -78,12 +94,25 @@ log_info "Log level: ${LOG_LEVEL}"
 # Database configuration (REQUIRED)
 if [ "$IN_HA" = true ]; then
     log_info "Reading database configuration from add-on settings..."
-    DB_PROVIDER=$(bashio::config 'database_provider')
-    DB_HOST=$(bashio::config 'database_host')
-    DB_PORT=$(bashio::config 'database_port')
-    DB_NAME=$(bashio::config 'database_name')
-    DB_USER=$(bashio::config 'database_user')
-    DB_PASS=$(bashio::config 'database_password')
+    
+    # Try to read from bashio
+    DB_PROVIDER=$(bashio::config 'database_provider' 2>/dev/null || echo "")
+    DB_HOST=$(bashio::config 'database_host' 2>/dev/null || echo "")
+    DB_PORT=$(bashio::config 'database_port' 2>/dev/null || echo "")
+    DB_NAME=$(bashio::config 'database_name' 2>/dev/null || echo "")
+    DB_USER=$(bashio::config 'database_user' 2>/dev/null || echo "")
+    DB_PASS=$(bashio::config 'database_password' 2>/dev/null || echo "")
+    
+    # If bashio failed, try reading from options.json directly
+    if [ -z "$DB_PASS" ] && [ -f /data/options.json ]; then
+        log_info "Bashio config read failed, trying options.json directly..."
+        DB_PROVIDER=$(jq -r '.database_provider // "mysql"' /data/options.json)
+        DB_HOST=$(jq -r '.database_host // "core-mariadb"' /data/options.json)
+        DB_PORT=$(jq -r '.database_port // 3306' /data/options.json)
+        DB_NAME=$(jq -r '.database_name // "evolution"' /data/options.json)
+        DB_USER=$(jq -r '.database_user // "homeassistant"' /data/options.json)
+        DB_PASS=$(jq -r '.database_password // ""' /data/options.json)
+    fi
     
     log_info "Database provider: ${DB_PROVIDER}"
     log_info "Database host: ${DB_HOST}"
