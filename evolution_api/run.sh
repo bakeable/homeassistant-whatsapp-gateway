@@ -77,6 +77,7 @@ log_info "Log level: ${LOG_LEVEL}"
 
 # Database configuration (REQUIRED)
 if [ "$IN_HA" = true ]; then
+    log_info "Reading database configuration from add-on settings..."
     DB_PROVIDER=$(bashio::config 'database_provider')
     DB_HOST=$(bashio::config 'database_host')
     DB_PORT=$(bashio::config 'database_port')
@@ -84,16 +85,34 @@ if [ "$IN_HA" = true ]; then
     DB_USER=$(bashio::config 'database_user')
     DB_PASS=$(bashio::config 'database_password')
     
+    log_info "Database provider: ${DB_PROVIDER}"
+    log_info "Database host: ${DB_HOST}"
+    log_info "Database port: ${DB_PORT}"
+    log_info "Database name: ${DB_NAME}"
+    log_info "Database user: ${DB_USER}"
+    
     if [ -z "$DB_PASS" ]; then
-        log_error "Database password is required!"
-        log_error "Please configure the following in add-on settings:"
-        log_error "  - database_host (e.g., 'core-mariadb' for MariaDB add-on)"
-        log_error "  - database_port (usually 3306 for MariaDB)"
-        log_error "  - database_name (e.g., 'evolution')"
-        log_error "  - database_user (e.g., 'homeassistant')"
-        log_error "  - database_password (must match your MariaDB configuration)"
+        log_error "Database password is empty or not set!"
         log_error ""
-        log_error "Make sure you have installed the MariaDB add-on and created the database first!"
+        log_error "Current configuration read from settings:"
+        log_error "  Provider: ${DB_PROVIDER:-<not set>}"
+        log_error "  Host: ${DB_HOST:-<not set>}"
+        log_error "  Port: ${DB_PORT:-<not set>}"
+        log_error "  Database: ${DB_NAME:-<not set>}"
+        log_error "  User: ${DB_USER:-<not set>}"
+        log_error "  Password: <empty or not set>"
+        log_error ""
+        log_error "To fix this:"
+        log_error "  1. Go to the add-on Configuration tab"
+        log_error "  2. Set 'database_password' to match your MariaDB password"
+        log_error "  3. Click 'Save' (not just change the value!)"
+        log_error "  4. Restart the add-on"
+        log_error ""
+        log_error "If using MariaDB add-on, the default values should work:"
+        log_error "  - database_host: core-mariadb"
+        log_error "  - database_user: homeassistant"
+        log_error "  - database_name: evolution"
+        log_error "  - database_password: <your MariaDB password>"
         exit 1
     fi
     
