@@ -1,4 +1,3 @@
-import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -61,23 +60,31 @@ async function registerServiceDiscovery(): Promise<void> {
 async function main(): Promise<void> {
   const app = express();
 
-  // Middleware
-  app.use(cors());
-  app.use(express.json());
-  
-  // Strip Home Assistant ingress prefix from requests
-  // HA ingress forwards /slug/api/... but we need /api/...
+  // CORS - allow all origins for cross-origin requests from HA frontend
+  // Including Private Network Access headers for local network communication
   app.use((req, res, next) => {
-    const ingressPath = req.headers['x-ingress-path'] as string | undefined;
-    if (ingressPath && req.url.startsWith(ingressPath)) {
-      req.url = req.url.substring(ingressPath.length) || '/';
-    }
-    // Also check for slug pattern in path (e.g., /6f0284fb_whatsapp_gateway_api/api/...)
-    const slugMatch = req.url.match(/^\/[a-f0-9]+_[a-z_]+(\/.*)$/);
-    if (slugMatch) {
-      req.url = slugMatch[1];
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    // Allow private network access (required for local network requests)
+    res.header('Access-Control-Allow-Private-Network', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
     }
     next();
+  });
+  
+  app.use(express.json());
+  
+  // Debug logging for incoming requests
+  app.use((req, res, next) => {
+    console.log(`[Gateway] ${req.method} ${req.url} (origin: ${req.headers.origin || 'none'})`);
+    next();
+  });
+
+  // Initialize database (async)
   });
 
   // Initialize database (async)
