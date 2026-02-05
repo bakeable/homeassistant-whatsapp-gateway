@@ -147,6 +147,8 @@ if [ "$IN_HA" = true ]; then
     export DATABASE_ENABLED="true"
     export DATABASE_PROVIDER="mysql"
     export DATABASE_CONNECTION_URI="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    # Prisma requires DATABASE_URL environment variable
+    export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
     export DATABASE_SAVE_DATA_INSTANCE="true"
     export DATABASE_SAVE_DATA_NEW_MESSAGE="true"
@@ -159,6 +161,8 @@ if [ "$IN_HA" = true ]; then
 elif [ -n "$DATABASE_CONNECTION_URI" ]; then
     export DATABASE_PROVIDER="mysql"
     export DATABASE_ENABLED="true"
+    # Prisma requires DATABASE_URL environment variable
+    export DATABASE_URL="${DATABASE_CONNECTION_URI}"
     export DATABASE_CONNECTION_CLIENT_NAME="evolution_ha"
     export DATABASE_SAVE_DATA_INSTANCE="true"
     export DATABASE_SAVE_DATA_NEW_MESSAGE="true"
@@ -279,38 +283,65 @@ log_info "Configuration complete, starting Evolution API..."
 
 # We're already in /evolution directory (set in Dockerfile)
 
-# Evolution API uses Prisma internally and should auto-migrate when DATABASE_ENABLED=true
-# But we need to ensure the Prisma client is generated for MySQL and migrations are deployed
-log_info "Setting up Evolution API database..."
+# ==============================================================================
+# Run Evolution API's database migrations
+# This is CRITICAL - the Evolution API image's entrypoint runs deploy_database.sh
+# but we override the entrypoint, so we must run it ourselves
+# ==============================================================================
 
-# First, let's check if prisma schemas exist
-if [ -f "./prisma/mysql-schema.prisma" ]; then
-    log_info "Found mysql-schema.prisma, generating Prisma Client..."
-    npx prisma generate --schema ./prisma/mysql-schema.prisma 2>&1 || {
-        log_warning "Failed to generate Prisma Client from mysql-schema"
-    }
+log_info "Setting up Evolution API database..."
+log_info "Database provider: mysql"
+
+# Set DATABASE_PROVIDER for Evolution API's scripts
+export DATABASE_PROVIDER="mysql"
+
+# The Evolution API uses a specific migration process:
+# 1. Copy mysql-migrations to migrations folder
+# 2. Run prisma migrate deploy with mysql-schema.prisma
+# 3. Generate Prisma client
+
+if [ -d "./prisma/mysql-migrations" ] && [ -f "./prisma/mysql-schema.prisma" ]; then
+    log_info "Found Evolution API Prisma schema and migrations"
     
-    log_info "Deploying database migrations..."
-    npx prisma migrate deploy --schema ./prisma/mysql-schema.prisma 2>&1 || {
-        log_warning "Migration deploy failed, trying db push..."
-        npx prisma db push --schema ./prisma/mysql-schema.prisma --accept-data-loss 2>&1 || {
-            log_warning "db push also failed, Evolution API will handle migrations"
-        }
-    }
-elif [ -f "./prisma/schema.prisma" ]; then
-    log_info "Found schema.prisma, generating Prisma Client..."
-    npx prisma generate --schema ./prisma/schema.prisma 2>&1 || {
-        log_warning "Failed to generate Prisma Client from schema"
-    }
+    # Step 1: Copy mysql-migrations to migrations (exactly like Evolution API does)
+    log_info "Copying mysql-migrations to migrations folder..."
+    rm -rf ./prisma/migrations 2>/dev/null || true
+    cp -r ./prisma/mysql-migrations ./prisma/migrations
     
+    # Step 2: Deploy migrations
     log_info "Deploying database migrations..."
-    npx prisma db push --schema ./prisma/schema.prisma --accept-data-loss 2>&1 || {
-        log_warning "db push failed, Evolution API will handle migrations"
-    }
+    if npx prisma migrate deploy --schema ./prisma/mysql-schema.prisma 2>&1; then
+        log_info "Migration deploy succeeded"
+    else
+        log_warning "Migration deploy failed, trying db push as fallback..."
+        if npx prisma db push --schema ./prisma/mysql-schema.prisma --accept-data-loss 2>&1; then
+            log_info "db push succeeded"
+        else
+            log_error "Database migration failed! Tables may not exist."
+            log_error "Please check your MariaDB connection and try again."
+        fi
+    fi
+    
+    # Step 3: Generate Prisma client
+    log_info "Generating Prisma client..."
+    if npx prisma generate --schema ./prisma/mysql-schema.prisma 2>&1; then
+        log_info "Prisma client generated successfully"
+    else
+        log_warning "Prisma generate failed, Evolution API may not work correctly"
+    fi
 else
-    log_info "No prisma schema found in /evolution/prisma/, Evolution API will handle database setup"
-    # List available files for debugging
-    ls -la ./prisma/ 2>/dev/null || log_info "prisma directory doesn't exist"
+    log_error "Evolution API Prisma files not found!"
+    log_error "Expected: ./prisma/mysql-migrations and ./prisma/mysql-schema.prisma"
+    ls -la ./prisma/ 2>/dev/null || log_error "prisma directory doesn't exist"
+fi
+
+# Verify tables were created
+log_info "Verifying database tables..."
+if command -v mysql &> /dev/null; then
+    TABLE_COUNT=$(mysql -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME}';" 2>/dev/null || echo "0")
+    log_info "Found ${TABLE_COUNT} tables in database"
+else
+    log_info "mysql client not available, skipping table verification"
 fi
 
 # Function to configure instance after API is ready
