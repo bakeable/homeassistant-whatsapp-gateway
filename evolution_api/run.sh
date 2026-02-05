@@ -8,30 +8,33 @@ set -e
 
 # Detect if running in Home Assistant
 IN_HA=false
+BASHIO_AVAILABLE=false
 
-# Check for bashio
-if [ -f /usr/bin/bashio ]; then
+# Check for bashio library
+if [ -f /usr/lib/bashio/bashio.sh ]; then
+    echo "[DEBUG] Found bashio library at /usr/lib/bashio/"
+    # Source bashio from its library location
+    source /usr/lib/bashio/bashio.sh
+    BASHIO_AVAILABLE=true
+    IN_HA=true
+    echo "[DEBUG] Successfully sourced bashio"
+elif [ -f /usr/bin/bashio ]; then
     echo "[DEBUG] Found bashio at /usr/bin/bashio"
-    if source /usr/bin/bashio 2>&1; then
-        echo "[DEBUG] Successfully sourced bashio"
-        IN_HA=true
-    else
-        echo "[ERROR] Failed to source bashio"
-    fi
+    source /usr/bin/bashio 2>/dev/null && BASHIO_AVAILABLE=true && IN_HA=true || echo "[WARN] Failed to source bashio"
 else
-    echo "[DEBUG] bashio not found at /usr/bin/bashio"
+    echo "[DEBUG] bashio not found"
 fi
 
-# Also check for SUPERVISOR_TOKEN as fallback
+# Also check for SUPERVISOR_TOKEN as indicator of HA environment
 if [ -n "$SUPERVISOR_TOKEN" ]; then
     echo "[DEBUG] SUPERVISOR_TOKEN detected"
     IN_HA=true
 fi
 
-echo "[DEBUG] IN_HA=${IN_HA}"
+echo "[DEBUG] IN_HA=${IN_HA}, BASHIO_AVAILABLE=${BASHIO_AVAILABLE}"
 
 log_info() {
-    if [ "$IN_HA" = true ] && command -v bashio::log.info &> /dev/null; then
+    if [ "$BASHIO_AVAILABLE" = true ]; then
         bashio::log.info "$1"
     else
         echo "[INFO] $1"
@@ -39,7 +42,7 @@ log_info() {
 }
 
 log_warning() {
-    if [ "$IN_HA" = true ] && command -v bashio::log.warning &> /dev/null; then
+    if [ "$BASHIO_AVAILABLE" = true ]; then
         bashio::log.warning "$1"
     else
         echo "[WARN] $1"
@@ -47,7 +50,7 @@ log_warning() {
 }
 
 log_error() {
-    if [ "$IN_HA" = true ] && command -v bashio::log.error &> /dev/null; then
+    if [ "$BASHIO_AVAILABLE" = true ]; then
         bashio::log.error "$1"
     else
         echo "[ERROR] $1"
@@ -93,19 +96,22 @@ log_info "Log level: ${LOG_LEVEL}"
 
 # Database configuration (REQUIRED)
 if [ "$IN_HA" = true ]; then
-    log_info "Reading database configuration from add-on settings..."
+    log_info "Reading database configuration..."
     
-    # Try to read from bashio
-    DB_PROVIDER=$(bashio::config 'database_provider' 2>/dev/null || echo "")
-    DB_HOST=$(bashio::config 'database_host' 2>/dev/null || echo "")
-    DB_PORT=$(bashio::config 'database_port' 2>/dev/null || echo "")
-    DB_NAME=$(bashio::config 'database_name' 2>/dev/null || echo "")
-    DB_USER=$(bashio::config 'database_user' 2>/dev/null || echo "")
-    DB_PASS=$(bashio::config 'database_password' 2>/dev/null || echo "")
+    # Try to read from bashio if available
+    if [ "$BASHIO_AVAILABLE" = true ]; then
+        log_info "Using bashio to read configuration"
+        DB_PROVIDER=$(bashio::config 'database_provider' 2>/dev/null || echo "")
+        DB_HOST=$(bashio::config 'database_host' 2>/dev/null || echo "")
+        DB_PORT=$(bashio::config 'database_port' 2>/dev/null || echo "")
+        DB_NAME=$(bashio::config 'database_name' 2>/dev/null || echo "")
+        DB_USER=$(bashio::config 'database_user' 2>/dev/null || echo "")
+        DB_PASS=$(bashio::config 'database_password' 2>/dev/null || echo "")
+    fi
     
-    # If bashio failed, try reading from options.json directly
+    # If bashio failed or not available, try reading from options.json directly
     if [ -z "$DB_PASS" ] && [ -f /data/options.json ]; then
-        log_info "Bashio config read failed, trying options.json directly..."
+        log_info "Reading configuration from /data/options.json"
         DB_PROVIDER=$(jq -r '.database_provider // "mysql"' /data/options.json)
         DB_HOST=$(jq -r '.database_host // "core-mariadb"' /data/options.json)
         DB_PORT=$(jq -r '.database_port // 3306' /data/options.json)

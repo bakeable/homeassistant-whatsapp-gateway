@@ -22,15 +22,14 @@ RUN apk add --no-cache \
     jq \
     bash
 
-# Install bashio
+# Install bashio (all library files must be in same directory)
 ARG BASHIO_VERSION="0.16.2"
-RUN curl -fsSL "https://github.com/hassio-addons/bashio/archive/v${BASHIO_VERSION}.tar.gz" \
+RUN mkdir -p /usr/lib/bashio \
+    && curl -fsSL "https://github.com/hassio-addons/bashio/archive/v${BASHIO_VERSION}.tar.gz" \
     | tar -xzf - -C /tmp \
-    && mv /tmp/bashio-${BASHIO_VERSION}/lib /usr/lib/bashio \
+    && cp -r /tmp/bashio-${BASHIO_VERSION}/lib/* /usr/lib/bashio/ \
     && ln -s /usr/lib/bashio/bashio.sh /usr/bin/bashio \
-    && chmod +x /usr/lib/bashio/bashio.sh \
-    && rm -rf /tmp/bashio-${BASHIO_VERSION} \
-    && bashio --version || echo "Bashio installed"
+    && rm -rf /tmp/bashio-${BASHIO_VERSION}
 
 # Copy and build the gateway
 COPY gateway /gateway
