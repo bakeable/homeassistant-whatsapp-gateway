@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { EvolutionClient } from './clients/evolution';
 import { HAClient } from './clients/ha';
@@ -102,24 +103,32 @@ async function main(): Promise<void> {
   // Serve static UI files
   app.use(express.static(path.join(__dirname, '../public')));
 
+  // Read the built index.html once at startup
+  const indexHtmlPath = path.join(__dirname, '../public/index.html');
+  let indexHtmlTemplate = '';
+  try {
+    indexHtmlTemplate = fs.readFileSync(indexHtmlPath, 'utf-8');
+  } catch (err) {
+    console.warn('[Gateway] Could not read index.html, ingress support may not work:', err);
+  }
+
   // SPA fallback - serve index.html for all other routes
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api/') && !req.path.startsWith('/webhook/')) {
-      // Inject ingress path detection script
+      // Inject ingress path into the HTML
       const ingressPath = req.headers['x-ingress-path'] || '';
-      res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Gateway</title>
-  <script>window.__INGRESS_PATH__ = '${ingressPath}';</script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/assets/index.js"></script>
-</body>
-</html>`);
+      
+      if (indexHtmlTemplate) {
+        // Inject the ingress path script into the head
+        const modifiedHtml = indexHtmlTemplate.replace(
+          '</head>',
+          `  <script>window.__INGRESS_PATH__ = '${ingressPath}';</script>\n</head>`
+        );
+        res.send(modifiedHtml);
+      } else {
+        // Fallback if we couldn't read the template
+        res.sendFile(indexHtmlPath);
+      }
     } else {
       res.status(404).json({ error: 'Not found' });
     }
