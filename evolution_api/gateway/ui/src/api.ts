@@ -2,7 +2,15 @@
  * API client for the WhatsApp Gateway API backend
  */
 
-const API_BASE = '';
+// Detect if we're running under Home Assistant ingress
+// HA ingress injects X-Ingress-Path header, which we expose via window.__INGRESS_PATH__
+declare global {
+  interface Window {
+    __INGRESS_PATH__?: string;
+  }
+}
+
+const API_BASE = window.__INGRESS_PATH__ || '';
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {

@@ -1,120 +1,129 @@
-import { QRCodeSVG } from 'qrcode.react'
-import { useCallback, useEffect, useState } from 'react'
-import { haApi, waApi } from '../api'
+import { QRCodeSVG } from "qrcode.react";
+import { useCallback, useEffect, useState } from "react";
+import { haApi, waApi } from "../api";
 
 interface ConnectionStatus {
-  evolution: 'connected' | 'disconnected' | 'connecting' | 'qr' | 'unknown'
-  ha: 'connected' | 'disconnected' | 'unknown'
+  evolution: "connected" | "disconnected" | "connecting" | "qr" | "unknown";
+  ha: "connected" | "disconnected" | "unknown";
 }
 
 export default function SetupPage() {
   const [status, setStatus] = useState<ConnectionStatus>({
-    evolution: 'unknown',
-    ha: 'unknown',
-  })
-  const [qrCode, setQrCode] = useState<string | null>(null)
-  const [qrType, setQrType] = useState<'base64' | 'text'>('base64')
-  const [instanceName, setInstanceName] = useState('Home')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+    evolution: "unknown",
+    ha: "unknown",
+  });
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrType, setQrType] = useState<"base64" | "text">("base64");
+  const [instanceName, setInstanceName] = useState("HomeAssistant");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Check connection status
   const checkStatus = useCallback(async () => {
     try {
       // Check Evolution API / WhatsApp status
-      const waStatus = await waApi.getStatus()
-      setStatus(prev => ({
+      const waStatus = await waApi.getStatus();
+      setStatus((prev) => ({
         ...prev,
-        evolution: waStatus.evolution_connected ? 'connected' : 'disconnected',
-      }))
-      setInstanceName(waStatus.instance_name || 'Home')
+        evolution: waStatus.evolution_connected ? "connected" : "disconnected",
+      }));
+      setInstanceName(waStatus.instance_name || "HomeAssistant");
 
       // Check HA status
-      const haStatus = await haApi.getStatus()
-      setStatus(prev => ({
+      const haStatus = await haApi.getStatus();
+      setStatus((prev) => ({
         ...prev,
-        ha: haStatus.connected ? 'connected' : 'disconnected',
-      }))
+        ha: haStatus.connected ? "connected" : "disconnected",
+      }));
     } catch (e) {
-      console.error('Status check failed:', e)
+      console.error("Status check failed:", e);
     }
-  }, [])
+  }, []);
 
   // Initial status check
   useEffect(() => {
-    checkStatus()
-  }, [checkStatus])
+    checkStatus();
+  }, [checkStatus]);
 
   // Poll status when QR is showing
   useEffect(() => {
     if (qrCode) {
       const interval = setInterval(async () => {
         try {
-          const instanceStatus = await waApi.getInstanceStatus(instanceName)
-          if (instanceStatus.status === 'connected') {
-            setQrCode(null)
-            setStatus(prev => ({ ...prev, evolution: 'connected' }))
+          const instanceStatus = await waApi.getInstanceStatus(instanceName);
+          if (instanceStatus.status === "connected") {
+            setQrCode(null);
+            setStatus((prev) => ({ ...prev, evolution: "connected" }));
           }
         } catch (e) {
           // Ignore polling errors
         }
-      }, 2000)
-      return () => clearInterval(interval)
+      }, 2000);
+      return () => clearInterval(interval);
     }
-  }, [qrCode, instanceName])
+  }, [qrCode, instanceName]);
 
   // Generate QR code
   const handleConnect = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       // Ensure instance exists
-      await waApi.createInstance(instanceName)
-      
+      await waApi.createInstance(instanceName);
+
       // Get QR code
-      const qrData = await waApi.connect(instanceName)
-      
+      const qrData = await waApi.connect(instanceName);
+
       if (qrData.qr) {
-        setQrCode(qrData.qr)
-        setQrType(qrData.qr_type || 'base64')
-        setStatus(prev => ({ ...prev, evolution: 'qr' }))
+        setQrCode(qrData.qr);
+        setQrType(qrData.qr_type || "base64");
+        setStatus((prev) => ({ ...prev, evolution: "qr" }));
       }
     } catch (e: any) {
-      setError(e.message)
+      setError(e.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Disconnect
   const handleDisconnect = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      await waApi.disconnect(instanceName)
-      setStatus(prev => ({ ...prev, evolution: 'disconnected' }))
-      setQrCode(null)
+      await waApi.disconnect(instanceName);
+      setStatus((prev) => ({ ...prev, evolution: "disconnected" }));
+      setQrCode(null);
     } catch (e: any) {
-      setError(e.message)
+      setError(e.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const StatusBadge = ({ status, label }: { status: string; label: string }) => {
+  const StatusBadge = ({
+    status,
+    label,
+  }: {
+    status: string;
+    label: string;
+  }) => {
     const colors = {
-      connected: 'status-connected',
-      disconnected: 'status-disconnected',
-      connecting: 'status-connecting',
-      qr: 'status-connecting',
-      unknown: 'bg-gray-100 text-gray-800',
-    }
+      connected: "status-connected",
+      disconnected: "status-disconnected",
+      connecting: "status-connecting",
+      qr: "status-connecting",
+      unknown: "bg-gray-100 text-gray-800",
+    };
     return (
-      <span className={`status-badge ${colors[status as keyof typeof colors] || colors.unknown}`}>
-        {status === 'connected' ? '✓' : status === 'disconnected' ? '✗' : '○'} {label}
+      <span
+        className={`status-badge ${colors[status as keyof typeof colors] || colors.unknown}`}
+      >
+        {status === "connected" ? "✓" : status === "disconnected" ? "✗" : "○"}{" "}
+        {label}
       </span>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -141,7 +150,7 @@ export default function SetupPage() {
       {/* WhatsApp Connection */}
       <div className="card">
         <h3 className="text-lg font-medium mb-4">WhatsApp Connection</h3>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
             {error}
@@ -155,7 +164,7 @@ export default function SetupPage() {
             value={instanceName}
             onChange={(e) => setInstanceName(e.target.value)}
             className="input max-w-xs"
-            disabled={status.evolution === 'connected'}
+            disabled={status.evolution === "connected"}
           />
         </div>
 
@@ -171,8 +180,12 @@ export default function SetupPage() {
               <li>Scan the QR code below</li>
             </ol>
             <div className="flex justify-center p-4 bg-white border rounded-lg">
-              {qrType === 'base64' ? (
-                <img src={qrCode} alt="WhatsApp QR Code" className="max-w-[280px]" />
+              {qrType === "base64" ? (
+                <img
+                  src={qrCode}
+                  alt="WhatsApp QR Code"
+                  className="max-w-[280px]"
+                />
               ) : (
                 <QRCodeSVG value={qrCode} size={280} />
               )}
@@ -187,7 +200,7 @@ export default function SetupPage() {
               Cancel
             </button>
           </div>
-        ) : status.evolution === 'connected' ? (
+        ) : status.evolution === "connected" ? (
           <div className="space-y-4">
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-700 font-medium">✓ WhatsApp Connected</p>
@@ -200,7 +213,7 @@ export default function SetupPage() {
               disabled={loading}
               className="btn btn-danger"
             >
-              {loading ? 'Disconnecting...' : 'Disconnect'}
+              {loading ? "Disconnecting..." : "Disconnect"}
             </button>
           </div>
         ) : (
@@ -209,7 +222,7 @@ export default function SetupPage() {
             disabled={loading || !instanceName}
             className="btn btn-success"
           >
-            {loading ? 'Generating QR...' : '📷 Generate QR Code'}
+            {loading ? "Generating QR..." : "📷 Generate QR Code"}
           </button>
         )}
       </div>
@@ -219,11 +232,18 @@ export default function SetupPage() {
         <h3 className="text-lg font-medium text-blue-800 mb-2">Quick Start</h3>
         <ol className="text-blue-700 list-decimal list-inside space-y-2">
           <li>Connect your WhatsApp by scanning the QR code above</li>
-          <li>Go to the <strong>Chats</strong> tab to see and enable groups/contacts</li>
-          <li>Create rules in the <strong>Rules</strong> tab to automate actions</li>
-          <li>Monitor activity in the <strong>Logs</strong> tab</li>
+          <li>
+            Go to the <strong>Chats</strong> tab to see and enable
+            groups/contacts
+          </li>
+          <li>
+            Create rules in the <strong>Rules</strong> tab to automate actions
+          </li>
+          <li>
+            Monitor activity in the <strong>Logs</strong> tab
+          </li>
         </ol>
       </div>
     </div>
-  )
+  );
 }

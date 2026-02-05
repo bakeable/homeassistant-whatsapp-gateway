@@ -44,7 +44,7 @@ export function loadConfig(): Config {
     // Evolution API settings
     evolutionUrl: process.env.EVOLUTION_URL || 'http://localhost:8080',
     apiKey: process.env.EVOLUTION_API_KEY || process.env.AUTHENTICATION_API_KEY || '',
-    instanceName: process.env.INSTANCE_NAME || 'Home',
+    instanceName: process.env.INSTANCE_NAME || 'HomeAssistant',
     
     // Home Assistant settings
     haUrl: process.env.HA_URL || 'http://supervisor/core',

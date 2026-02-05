@@ -125,7 +125,7 @@ Cypress.Commands.add('mockConnectedState', () => {
   cy.intercept('GET', '/api/wa/status', {
     statusCode: 200,
     body: {
-      instance_name: 'Home',
+      instance_name: 'HomeAssistant',
       evolution_status: 'connected',
       evolution_connected: true,
     },
@@ -157,7 +157,7 @@ Cypress.Commands.add('mockDisconnectedState', () => {
   cy.intercept('GET', '/api/wa/status', {
     statusCode: 200,
     body: {
-      instance_name: 'Home',
+      instance_name: 'HomeAssistant',
       evolution_status: 'disconnected',
       evolution_connected: false,
     },
@@ -173,7 +173,7 @@ Cypress.Commands.add('mockDisconnectedState', () => {
 
   cy.intercept('POST', '/api/wa/instances', {
     statusCode: 200,
-    body: { instance: { instanceName: 'Home' } },
+    body: { instance: { instanceName: 'HomeAssistant' } },
   }).as('createInstance')
 
   cy.intercept('POST', '/api/wa/instances/*/connect', {

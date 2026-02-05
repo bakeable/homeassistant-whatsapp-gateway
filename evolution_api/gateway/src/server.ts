@@ -105,7 +105,21 @@ async function main(): Promise<void> {
   // SPA fallback - serve index.html for all other routes
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api/') && !req.path.startsWith('/webhook/')) {
-      res.sendFile(path.join(__dirname, '../public/index.html'));
+      // Inject ingress path detection script
+      const ingressPath = req.headers['x-ingress-path'] || '';
+      res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Gateway</title>
+  <script>window.__INGRESS_PATH__ = '${ingressPath}';</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/assets/index.js"></script>
+</body>
+</html>`);
     } else {
       res.status(404).json({ error: 'Not found' });
     }

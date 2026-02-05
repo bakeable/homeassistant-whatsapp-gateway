@@ -101,14 +101,14 @@ ruleFires.push(
 
 app.get('/api/wa/status', (req, res) => {
   res.json({
-    instance_name: 'Home',
+    instance_name: 'HomeAssistant',
     evolution_status: connected ? 'connected' : 'disconnected',
     evolution_connected: connected,
   });
 });
 
 app.post('/api/wa/instances', (req, res) => {
-  res.json({ instance: { instanceName: req.body.instance_name || 'Home' } });
+  res.json({ instance: { instanceName: req.body.instance_name || 'HomeAssistant' } });
 });
 
 app.post('/api/wa/instances/:instance/connect', (req, res) => {
