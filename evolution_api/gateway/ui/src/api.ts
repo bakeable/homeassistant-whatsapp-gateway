@@ -2,34 +2,18 @@
  * API client for the WhatsApp Gateway API backend
  */
 
-// Detect if we're running under Home Assistant ingress
-declare global {
-  interface Window {
-    __INGRESS_PATH__?: string;
-  }
+// Get the base URL for API calls
+// The gateway runs on port 8099 and is exposed on the HA host
+function getApiBase(): string {
+  // Use the same hostname as the current page but on port 8099
+  return `${window.location.protocol}//${window.location.hostname}:8099`;
 }
 
-// Try to get ingress path from server injection, or auto-detect from URL
-function getIngressPath(): string {
-  // First check if server injected the path
-  if (window.__INGRESS_PATH__) {
-    return window.__INGRESS_PATH__;
-  }
-  
-  // Fallback: detect from current URL path
-  // Ingress paths typically look like /6f0284fb_whatsapp_gateway_api
-  const pathParts = window.location.pathname.split('/').filter(p => p);
-  if (pathParts.length > 0 && pathParts[0].includes('_')) {
-    return '/' + pathParts[0];
-  }
-  
-  return '';
-}
-
-const API_BASE = getIngressPath();
+const API_BASE = getApiBase();
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

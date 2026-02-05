@@ -2,7 +2,7 @@
 # https://github.com/bakeable/homeassistant-whatsapp-add-on
 
 name: WhatsApp Gateway API
-version: "1.1.8"
+version: "1.1.9"
 slug: whatsapp_gateway_api
 description: >-
   Send and receive WhatsApp messages from Home Assistant. Provides a notify
@@ -33,10 +33,10 @@ panel_title: WhatsApp
 # Exposed ports
 ports:
   8080/tcp: null
-  8099/tcp: null
+  8099/tcp: 8099
 ports_description:
   8080/tcp: Evolution API REST API (internal)
-  8099/tcp: WhatsApp Gateway API UI
+  8099/tcp: WhatsApp Gateway API (exposed for UI)
 
 # Storage mappings - persistent data for sessions
 map:

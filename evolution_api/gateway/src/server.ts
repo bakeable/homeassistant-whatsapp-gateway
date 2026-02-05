@@ -64,6 +64,21 @@ async function main(): Promise<void> {
   // Middleware
   app.use(cors());
   app.use(express.json());
+  
+  // Strip Home Assistant ingress prefix from requests
+  // HA ingress forwards /slug/api/... but we need /api/...
+  app.use((req, res, next) => {
+    const ingressPath = req.headers['x-ingress-path'] as string | undefined;
+    if (ingressPath && req.url.startsWith(ingressPath)) {
+      req.url = req.url.substring(ingressPath.length) || '/';
+    }
+    // Also check for slug pattern in path (e.g., /6f0284fb_whatsapp_gateway_api/api/...)
+    const slugMatch = req.url.match(/^\/[a-f0-9]+_[a-z_]+(\/.*)$/);
+    if (slugMatch) {
+      req.url = slugMatch[1];
+    }
+    next();
+  });
 
   // Initialize database (async)
   const db = await initDatabase({
