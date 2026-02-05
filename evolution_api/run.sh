@@ -279,17 +279,18 @@ log_info "Configuration complete, starting Evolution API..."
 
 # We're already in /evolution directory (set in Dockerfile)
 
-# Run database migrations based on provider
+# Generate Prisma Client for MySQL
+log_info "Generating Prisma Client for MySQL..."
+npx prisma generate --schema ./prisma/mysql-schema.prisma 2>&1 || {
+    log_error "Failed to generate Prisma Client"
+    exit 1
+}
+
+# Run database migrations
 log_info "Running database migrations..."
-if [ "$DATABASE_PROVIDER" = "mysql" ]; then
-    npx prisma migrate deploy --schema ./prisma/mysql-schema.prisma 2>&1 || {
-        log_warning "Migration failed or already up to date"
-    }
-else
-    npx prisma migrate deploy --schema ./prisma/postgresql-schema.prisma 2>&1 || {
-        log_warning "Migration failed or already up to date"
-    }
-fi
+npx prisma migrate deploy --schema ./prisma/mysql-schema.prisma 2>&1 || {
+    log_warning "Migration failed or already up to date"
+}
 
 # Function to configure instance after API is ready
 configure_instance() {
