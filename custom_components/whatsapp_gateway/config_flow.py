@@ -6,13 +6,12 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from . import DOMAIN, CONF_ADDON_URL, DEFAULT_ADDON_URL
+from . import CONF_ADDON_URL, DEFAULT_ADDON_URL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

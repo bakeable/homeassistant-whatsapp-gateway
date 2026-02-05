@@ -54,9 +54,14 @@ export default function TestPage() {
   const [recipient, setRecipient] = useState("");
   const [message, setMessage] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [mediaType, setMediaType] = useState<"image" | "document" | "audio" | "video">("image");
+  const [mediaType, setMediaType] = useState<
+    "image" | "document" | "audio" | "video"
+  >("image");
   const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [sendResult, setSendResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   // ── Rule Execution state ──
   const [ruleEvent, setRuleEvent] = useState("MESSAGES_UPSERT");
@@ -72,7 +77,10 @@ export default function TestPage() {
   const handleSendText = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipient || !message) {
-      setSendResult({ success: false, message: "Recipient and message are required" });
+      setSendResult({
+        success: false,
+        message: "Recipient and message are required",
+      });
       return;
     }
     setSending(true);
@@ -85,7 +93,10 @@ export default function TestPage() {
       });
       setMessage("");
     } catch (error: any) {
-      setSendResult({ success: false, message: `❌ Failed to send: ${error.message}` });
+      setSendResult({
+        success: false,
+        message: `❌ Failed to send: ${error.message}`,
+      });
     } finally {
       setSending(false);
     }
@@ -94,20 +105,30 @@ export default function TestPage() {
   const handleSendMedia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipient || !mediaUrl) {
-      setSendResult({ success: false, message: "Recipient and media URL are required" });
+      setSendResult({
+        success: false,
+        message: "Recipient and media URL are required",
+      });
       return;
     }
     setSending(true);
     setSendResult(null);
     try {
-      const response = await waApi.sendTestMedia(recipient, mediaUrl, mediaType);
+      const response = await waApi.sendTestMedia(
+        recipient,
+        mediaUrl,
+        mediaType,
+      );
       setSendResult({
         success: true,
         message: `✅ Media sent successfully! ID: ${response.message_id || "N/A"}`,
       });
       setMediaUrl("");
     } catch (error: any) {
-      setSendResult({ success: false, message: `❌ Failed to send media: ${error.message}` });
+      setSendResult({
+        success: false,
+        message: `❌ Failed to send media: ${error.message}`,
+      });
     } finally {
       setSending(false);
     }
@@ -134,24 +155,31 @@ export default function TestPage() {
     }
   };
 
-  const matchedCount = execResult?.evaluated_rules.filter((r) => r.matched).length || 0;
+  const matchedCount =
+    execResult?.evaluated_rules.filter((r) => r.matched).length || 0;
   const actionCount = execResult?.executed_actions.length || 0;
-  const allSuccess = execResult?.executed_actions.every((a) => a.success) ?? true;
+  const allSuccess =
+    execResult?.executed_actions.every((a) => a.success) ?? true;
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-mushroom-text">Test &amp; Debug</h2>
+        <h2 className="text-2xl font-semibold text-mushroom-text">
+          Test &amp; Debug
+        </h2>
       </div>
 
       {/* ════════════════════════════════════════════════════════════════
           SECTION 1: Rule Execution Testing
           ════════════════════════════════════════════════════════════════ */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-mushroom-text">🧪 Test Rule Execution</h3>
+        <h3 className="text-xl font-semibold text-mushroom-text">
+          🧪 Test Rule Execution
+        </h3>
         <p className="text-mushroom-text-secondary">
-          Simulate an incoming event and <strong>execute matching rules for real</strong>.
-          HA services will be called and WhatsApp replies will be sent!
+          Simulate an incoming event and{" "}
+          <strong>execute matching rules for real</strong>. HA services will be
+          called and WhatsApp replies will be sent!
         </p>
 
         <form onSubmit={handleTestExecute} className="space-y-4">
@@ -186,7 +214,8 @@ export default function TestPage() {
                 className="input"
               />
               <p className="text-sm text-mushroom-text-muted mt-1">
-                JID of the chat. Ending in @g.us = group, @s.whatsapp.net = direct.
+                JID of the chat. Ending in @g.us = group, @s.whatsapp.net =
+                direct.
               </p>
             </div>
 
@@ -201,7 +230,8 @@ export default function TestPage() {
                 className="input"
               />
               <p className="text-sm text-mushroom-text-muted mt-1">
-                JID of the message sender. Used for sender.ids and sender.numbers matching.
+                JID of the message sender. Used for sender.ids and
+                sender.numbers matching.
               </p>
             </div>
 
@@ -276,14 +306,23 @@ export default function TestPage() {
                   </thead>
                   <tbody>
                     {execResult.evaluated_rules.map((rule, i) => (
-                      <tr key={i} className="border-b border-mushroom-border/50">
+                      <tr
+                        key={i}
+                        className="border-b border-mushroom-border/50"
+                      >
                         <td className="py-2 pr-4">
-                          {rule.matched ? "✅" : rule.skippedCooldown ? "⏳" : "❌"}
+                          {rule.matched
+                            ? "✅"
+                            : rule.skippedCooldown
+                              ? "⏳"
+                              : "❌"}
                         </td>
                         <td className="py-2 pr-4">
                           <span className="font-mono text-xs">{rule.id}</span>
                           <br />
-                          <span className="text-mushroom-text-muted">{rule.name}</span>
+                          <span className="text-mushroom-text-muted">
+                            {rule.name}
+                          </span>
                         </td>
                         <td className="py-2 pr-4 text-mushroom-text-secondary font-mono text-xs">
                           {rule.reason}
@@ -365,7 +404,9 @@ export default function TestPage() {
       <hr className="border-mushroom-border" />
 
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-mushroom-text">💬 Send Test Messages</h3>
+        <h3 className="text-xl font-semibold text-mushroom-text">
+          💬 Send Test Messages
+        </h3>
         <p className="text-mushroom-text-secondary">
           Send real WhatsApp messages to verify your connection.
         </p>
@@ -384,7 +425,9 @@ export default function TestPage() {
 
         {/* Recipient Input */}
         <div className="card">
-          <h4 className="text-lg font-medium text-mushroom-text mb-4">📱 Recipient</h4>
+          <h4 className="text-lg font-medium text-mushroom-text mb-4">
+            📱 Recipient
+          </h4>
           <div className="space-y-2">
             <label className="label">Phone Number or Chat ID</label>
             <input
@@ -403,7 +446,9 @@ export default function TestPage() {
 
         {/* Text Message Form */}
         <div className="card">
-          <h4 className="text-lg font-medium text-mushroom-text mb-4">Send Text Message</h4>
+          <h4 className="text-lg font-medium text-mushroom-text mb-4">
+            Send Text Message
+          </h4>
           <form onSubmit={handleSendText} className="space-y-4">
             <div>
               <label className="label">Message</label>
@@ -427,7 +472,9 @@ export default function TestPage() {
 
         {/* Media Message Form */}
         <div className="card">
-          <h4 className="text-lg font-medium text-mushroom-text mb-4">📎 Send Media</h4>
+          <h4 className="text-lg font-medium text-mushroom-text mb-4">
+            📎 Send Media
+          </h4>
           <form onSubmit={handleSendMedia} className="space-y-4">
             <div>
               <label className="label">Media Type</label>
@@ -471,14 +518,17 @@ export default function TestPage() {
         <h3 className="text-lg font-medium text-info-text mb-2">💡 Tips</h3>
         <ul className="text-sm text-info-text/80 space-y-1 list-disc list-inside">
           <li>
-            <strong>Test Rule Execution</strong> runs your rules against a simulated message —
-            actions fire for real (HA services, WhatsApp replies).
+            <strong>Test Rule Execution</strong> runs your rules against a
+            simulated message — actions fire for real (HA services, WhatsApp
+            replies).
           </li>
           <li>
-            Use <strong>Send Test Messages</strong> to verify basic WhatsApp connectivity.
+            Use <strong>Send Test Messages</strong> to verify basic WhatsApp
+            connectivity.
           </li>
           <li>
-            Phone numbers should include country code (e.g., 31612345678 for Netherlands).
+            Phone numbers should include country code (e.g., 31612345678 for
+            Netherlands).
           </li>
           <li>Do not include + or spaces in phone numbers.</li>
           <li>For groups, find the Group ID in the Chats tab after syncing.</li>

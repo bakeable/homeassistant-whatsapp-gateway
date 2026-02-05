@@ -7,6 +7,7 @@ This custom integration registers WhatsApp services in Home Assistant, allowing 
 ### Manual Installation
 
 1. Copy the entire `whatsapp_gateway` folder to your Home Assistant `config/custom_components/` directory:
+
    ```
    config/
    ├── custom_components/
@@ -36,12 +37,13 @@ After installation, the following services will be available:
 
 Send a text message via WhatsApp.
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
+| Parameter | Required | Description                                          |
+| --------- | -------- | ---------------------------------------------------- |
 | `number`  | Yes      | Phone number with country code (e.g., `31612345678`) |
-| `text`    | Yes      | Message text to send |
+| `text`    | Yes      | Message text to send                                 |
 
 **Example:**
+
 ```yaml
 service: whatsapp_gateway.send_message
 data:
@@ -53,14 +55,15 @@ data:
 
 Send media (image, video, document, audio) via WhatsApp.
 
-| Parameter    | Required | Description |
-|--------------|----------|-------------|
-| `number`     | Yes      | Phone number with country code |
-| `media_url`  | Yes      | URL to the media file |
+| Parameter    | Required | Description                                                    |
+| ------------ | -------- | -------------------------------------------------------------- |
+| `number`     | Yes      | Phone number with country code                                 |
+| `media_url`  | Yes      | URL to the media file                                          |
 | `media_type` | No       | Type: `image`, `video`, `document`, `audio` (default: `image`) |
-| `caption`    | No       | Caption for the media |
+| `caption`    | No       | Caption for the media                                          |
 
 **Example:**
+
 ```yaml
 service: whatsapp_gateway.send_media
 data:

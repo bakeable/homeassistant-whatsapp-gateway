@@ -55,8 +55,8 @@ export default function SetupPage() {
           const waStatus = await waApi.getStatus();
           if (waStatus.status === "connected") {
             setQrCode(null);
-            setStatus((prev) => ({ 
-              ...prev, 
+            setStatus((prev) => ({
+              ...prev,
               whatsapp: "connected",
               phone: waStatus.phone,
             }));
@@ -95,7 +95,11 @@ export default function SetupPage() {
     setError(null);
     try {
       await waApi.disconnect();
-      setStatus((prev) => ({ ...prev, whatsapp: "disconnected", phone: undefined }));
+      setStatus((prev) => ({
+        ...prev,
+        whatsapp: "disconnected",
+        phone: undefined,
+      }));
       setQrCode(null);
     } catch (e: any) {
       setError(e.message);
@@ -134,17 +138,23 @@ export default function SetupPage() {
 
       {/* Connection Status */}
       <div className="card">
-        <h3 className="text-lg font-medium text-mushroom-text mb-4">Connection Status</h3>
+        <h3 className="text-lg font-medium text-mushroom-text mb-4">
+          Connection Status
+        </h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center space-x-2">
             <span className="text-mushroom-text-secondary">WhatsApp:</span>
             <StatusBadge status={status.whatsapp} label={status.whatsapp} />
             {status.phone && (
-              <span className="text-sm text-mushroom-text-muted">({status.phone})</span>
+              <span className="text-sm text-mushroom-text-muted">
+                ({status.phone})
+              </span>
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-mushroom-text-secondary">Home Assistant:</span>
+            <span className="text-mushroom-text-secondary">
+              Home Assistant:
+            </span>
             <StatusBadge status={status.ha} label={status.ha} />
           </div>
         </div>
@@ -155,7 +165,9 @@ export default function SetupPage() {
 
       {/* WhatsApp Connection */}
       <div className="card">
-        <h3 className="text-lg font-medium text-mushroom-text mb-4">WhatsApp Connection</h3>
+        <h3 className="text-lg font-medium text-mushroom-text mb-4">
+          WhatsApp Connection
+        </h3>
 
         {error && (
           <div className="mb-4 p-4 bg-danger-muted border border-danger/30 text-danger-text rounded-mushroom">
@@ -198,9 +210,13 @@ export default function SetupPage() {
         ) : status.whatsapp === "connected" ? (
           <div className="space-y-4">
             <div className="p-4 bg-success-muted border border-success/30 rounded-mushroom">
-              <p className="text-success-text font-medium">✓ WhatsApp Connected</p>
+              <p className="text-success-text font-medium">
+                ✓ WhatsApp Connected
+              </p>
               <p className="text-success-text/80 text-sm">
-                {status.phone ? `Connected as ${status.phone}` : "Instance is connected and ready."}
+                {status.phone
+                  ? `Connected as ${status.phone}`
+                  : "Instance is connected and ready."}
               </p>
             </div>
             <button
@@ -228,14 +244,17 @@ export default function SetupPage() {
         <ol className="text-info-text/80 list-decimal list-inside space-y-2">
           <li>Connect your WhatsApp by scanning the QR code above</li>
           <li>
-            Go to the <strong className="text-info-text">Chats</strong> tab to see and enable
-            groups/contacts
+            Go to the <strong className="text-info-text">Chats</strong> tab to
+            see and enable groups/contacts
           </li>
           <li>
-            Create rules in the <strong className="text-info-text">Rules</strong> tab to automate actions
+            Create rules in the{" "}
+            <strong className="text-info-text">Rules</strong> tab to automate
+            actions
           </li>
           <li>
-            Monitor activity in the <strong className="text-info-text">Logs</strong> tab
+            Monitor activity in the{" "}
+            <strong className="text-info-text">Logs</strong> tab
           </li>
         </ol>
       </div>

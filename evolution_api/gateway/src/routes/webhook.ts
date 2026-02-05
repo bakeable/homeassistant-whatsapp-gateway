@@ -6,9 +6,9 @@
  */
 
 import { Request, Response, Router } from 'express';
-import { EvolutionEventType } from '../engine/types';
 import { DatabasePool } from '../db/init';
 import { IncomingMessage, RuleEngine } from '../engine/rule-engine';
+import { EvolutionEventType } from '../engine/types';
 
 export function createWebhookRoutes(db: DatabasePool, ruleEngine: RuleEngine): Router {
   const router = Router();

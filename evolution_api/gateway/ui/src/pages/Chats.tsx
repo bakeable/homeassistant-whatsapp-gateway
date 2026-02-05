@@ -149,7 +149,11 @@ export default function ChatsPage() {
   );
 
   if (loading) {
-    return <div className="text-center py-8 text-mushroom-text-secondary">Loading chats...</div>;
+    return (
+      <div className="text-center py-8 text-mushroom-text-secondary">
+        Loading chats...
+      </div>
+    );
   }
 
   return (
@@ -325,7 +329,10 @@ export default function ChatsPage() {
           <tbody className="divide-y divide-mushroom-border">
             {filteredChats.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-mushroom-text-muted">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-mushroom-text-muted"
+                >
                   {chats.length === 0
                     ? 'No chats found. Click "Sync from WhatsApp" to load your chats.'
                     : "No chats match your search."}
@@ -378,7 +385,11 @@ export default function ChatsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => navigate(`/rules?chat=${encodeURIComponent(chat.chat_id)}`)}
+                      onClick={() =>
+                        navigate(
+                          `/rules?chat=${encodeURIComponent(chat.chat_id)}`,
+                        )
+                      }
                       className="text-primary hover:text-primary-hover text-sm hover:underline"
                     >
                       Create Rule →
