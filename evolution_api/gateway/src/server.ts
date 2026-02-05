@@ -8,6 +8,7 @@ import { initDatabase } from './db/init';
 import { RuleEngine } from './engine/rule-engine';
 import { createHaRoutes } from './routes/ha';
 import { createLogsRoutes } from './routes/logs';
+import { createNotifyRoutes } from './routes/notify';
 import { createRulesRoutes } from './routes/rules';
 import { createWaRoutes } from './routes/wa';
 import { createWebhookRoutes } from './routes/webhook';
@@ -29,11 +30,17 @@ const haClient = new HAClient(config.haUrl, config.haToken);
 // Initialize rule engine
 const ruleEngine = new RuleEngine(db, haClient, evolutionClient);
 
+// Health check endpoint (for watchdog)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // API routes
 app.use('/api/wa', createWaRoutes(evolutionClient, db));
 app.use('/api/ha', createHaRoutes(haClient));
 app.use('/api/rules', createRulesRoutes(db, ruleEngine));
 app.use('/api/logs', createLogsRoutes(db));
+app.use('/api/notify', createNotifyRoutes(evolutionClient, db));
 app.use('/webhook', createWebhookRoutes(db, ruleEngine));
 
 // Proxy Evolution API manager UI at /manager

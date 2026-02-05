@@ -12,11 +12,13 @@ This guide shows how to quickly test the WhatsApp Gateway add-on in your Home As
 ### Step 1: Access Your HA Filesystem
 
 **Option A - SSH:**
+
 ```bash
 ssh root@homeassistant.local
 ```
 
 **Option B - Samba/SMB:**
+
 - Mount the `addons` share
 - On macOS: `smb://homeassistant.local/addons`
 - On Windows: `\\homeassistant.local\addons`
@@ -44,12 +46,14 @@ cd /Users/robinbakker/GitHub/ha-add-on/ha-add-on-whatsapp-api/evolution_api
 ```
 
 **Using SCP:**
+
 ```bash
 cd /Users/robinbakker/GitHub/ha-add-on/ha-add-on-whatsapp-api
 scp -r evolution_api root@homeassistant.local:/addons/local/whatsapp_gateway/
 ```
 
 **Using Samba (easier):**
+
 1. Mount `smb://homeassistant.local/addons`
 2. Create folder: `local/whatsapp_gateway`
 3. Copy the `evolution_api` folder contents into it
@@ -57,10 +61,12 @@ scp -r evolution_api root@homeassistant.local:/addons/local/whatsapp_gateway/
 ### Step 4: Restart Supervisor
 
 In Home Assistant:
+
 1. Go to **Settings** → **System** → **Repairs**
 2. Click **Restart** (for Supervisor)
 
 OR via CLI:
+
 ```bash
 ha supervisor restart
 ```
@@ -77,12 +83,13 @@ ha supervisor restart
 After installation, configure:
 
 ```yaml
-api_key: "your-secret-key"  # Generate a random string
+api_key: "your-secret-key" # Generate a random string
 instance_name: "Home"
 log_level: "INFO"
 ```
 
 **Optional - External Database (Recommended for production):**
+
 ```yaml
 database_provider: "mysql"
 database_host: "core-mariadb"
@@ -117,16 +124,18 @@ rsync -avz --delete \
   --exclude 'dist' \
   --exclude '.git' \
   evolution_api/ root@homeassistant.local:/addons/local/whatsapp_gateway/
-  
+
 echo "✅ Synced to HA. Now rebuild the add-on in the UI."
 ```
 
 Make it executable:
+
 ```bash
 chmod +x sync-to-ha.sh
 ```
 
 Use it:
+
 ```bash
 ./sync-to-ha.sh
 ```
@@ -142,6 +151,7 @@ Use it:
 ### Build errors
 
 Check logs:
+
 ```bash
 ha addons logs whatsapp_gateway
 ```
@@ -149,6 +159,7 @@ ha addons logs whatsapp_gateway
 ### Port conflicts
 
 If port 8080 or 8099 is already in use, change in `config.yaml`:
+
 ```yaml
 ports:
   8080/tcp: 8081

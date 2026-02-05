@@ -3,12 +3,14 @@ import ChatsPage from './pages/Chats'
 import LogsPage from './pages/Logs'
 import RulesPage from './pages/Rules'
 import SetupPage from './pages/Setup'
+import TestPage from './pages/Test'
 
 function App() {
   const tabs = [
     { path: '/', label: 'Setup', icon: '⚙️' },
     { path: '/chats', label: 'Chats', icon: '💬' },
     { path: '/rules', label: 'Rules', icon: '📋' },
+    { path: '/test', label: 'Test', icon: '🧪' },
     { path: '/logs', label: 'Logs', icon: '📊' },
   ]
 
@@ -55,6 +57,7 @@ function App() {
           <Route path="/" element={<SetupPage />} />
           <Route path="/chats" element={<ChatsPage />} />
           <Route path="/rules" element={<RulesPage />} />
+          <Route path="/test" element={<TestPage />} />
           <Route path="/logs" element={<LogsPage />} />
         </Routes>
       </main>

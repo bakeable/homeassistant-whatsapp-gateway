@@ -1,5 +1,5 @@
 {
-  "name": "Evolution API Add-on Repository",
-  "url": "https://github.com/robinbakker/ha-add-on-whatsapp-api",
-  "maintainer": "Robin Bakker"
+  "name": "WhatsApp Gateway for Home Assistant",
+  "url": "https://github.com/bakeable/ha-add-on-whatsapp-api",
+  "maintainer": "Robin Bakker <robin@bakeable.nl>"
 }

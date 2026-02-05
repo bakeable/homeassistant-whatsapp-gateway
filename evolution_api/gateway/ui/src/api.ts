@@ -51,6 +51,9 @@ export const waApi = {
   refreshChats: () =>
     fetchApi('/api/wa/chats/refresh', { method: 'POST' }),
   
+  getRefreshStatus: () =>
+    fetchApi('/api/wa/chats/refresh/status'),
+  
   updateChat: (chatId: string, data: { enabled?: boolean }) =>
     fetchApi(`/api/wa/chats/${encodeURIComponent(chatId)}`, {
       method: 'PATCH',
@@ -61,6 +64,18 @@ export const waApi = {
     fetchApi('/api/wa/send', {
       method: 'POST',
       body: JSON.stringify({ to, text }),
+    }),
+  
+  sendTestMessage: (to: string, text: string) =>
+    fetchApi('/api/wa/send', {
+      method: 'POST',
+      body: JSON.stringify({ to, text }),
+    }),
+  
+  sendTestMedia: (to: string, mediaUrl: string, mediaType: string) =>
+    fetchApi('/api/wa/send-media', {
+      method: 'POST',
+      body: JSON.stringify({ to, media_url: mediaUrl, media_type: mediaType }),
     }),
 };
 

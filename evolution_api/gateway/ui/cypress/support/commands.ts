@@ -276,4 +276,5 @@ Cypress.Commands.add('goToTab', (tab) => {
   cy.contains('a', tab).click()
 })
 
-export {}
+export { }
+

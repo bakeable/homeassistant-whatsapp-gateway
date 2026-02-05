@@ -1,0 +1,77 @@
+# English translations for WhatsApp API add-on
+configuration:
+  api_key:
+    name: API Key
+    description: >-
+      API key for Evolution API authentication. If left empty, a random key will be
+      generated on startup (check the add-on logs for the key).
+  instance_name:
+    name: Instance Name
+    description: >-
+      Name for your WhatsApp instance. This is used to identify the connection
+      in the Evolution API and logs.
+  webhook_url:
+    name: Webhook URL
+    description: >-
+      Optional external webhook URL to receive WhatsApp events. The gateway
+      automatically handles internal webhooks for HA integration.
+  log_level:
+    name: Log Level
+    description: >-
+      Logging verbosity. Use DEBUG for troubleshooting, INFO for normal operation.
+  database_provider:
+    name: Database Provider
+    description: >-
+      Database type. Requires MariaDB or PostgreSQL add-on to be installed.
+  database_host:
+    name: Database Host
+    description: >-
+      Database server hostname. Use 'core-mariadb' for the official MariaDB add-on
+      or 'core-postgresql' for PostgreSQL.
+  database_port:
+    name: Database Port
+    description: Database server port (typically 3306 for MariaDB, 5432 for PostgreSQL).
+  database_name:
+    name: Database Name
+    description: Name of the database to use. You must create this database first.
+  database_user:
+    name: Database User
+    description: Database username with full access to the database.
+  database_password:
+    name: Database Password
+    description: Password for the database user.
+  redis_uri:
+    name: Redis URI
+    description: >-
+      Optional Redis connection URI for caching. Format: redis://host:port.
+      Leave empty to use local caching.
+  sync_full_history:
+    name: Sync Full History
+    description: >-
+      Sync all message history when connecting. Disable for faster connection
+      but limited message history.
+  reject_calls:
+    name: Reject Calls
+    description: Automatically reject incoming WhatsApp calls.
+  groups_ignore:
+    name: Ignore Groups
+    description: Do not process messages from group chats.
+  always_online:
+    name: Always Online
+    description: Show as always online on WhatsApp (may increase battery usage on phone).
+  read_messages:
+    name: Read Messages
+    description: Automatically mark incoming messages as read.
+  read_status:
+    name: Read Status
+    description: Automatically view status updates from contacts.
+  allowed_services:
+    name: Allowed Services
+    description: >-
+      Comma-separated list of Home Assistant services that can be called via
+      WhatsApp commands. Use wildcards like 'script.*' to allow all scripts.
+      Example: script.turn_on,automation.trigger,light.turn_on
+
+network:
+  8080/tcp: Evolution API REST endpoint (internal use)
+  8099/tcp: WhatsApp Gateway Web UI

@@ -45,7 +45,7 @@ export class EvolutionClient {
         'Content-Type': 'application/json',
         'apikey': apiKey,
       },
-      timeout: 30000,
+      timeout: 1800000, // 30 minutes timeout for long operations
     });
   }
   
@@ -139,36 +139,116 @@ export class EvolutionClient {
   
   /**
    * Get all groups for an instance
+   * Tries multiple endpoints for compatibility with different Evolution API versions
    */
   async listGroups(instanceName: string): Promise<Chat[]> {
-    const response = await this.client.get(`/group/fetchAllGroups/${instanceName}`, {
-      params: { getParticipants: false },
-    });
+    // Try the primary endpoint first
+    try {
+      console.log(`[Evolution] Fetching groups via /group/fetchAllGroups/${instanceName}`);
+      const response = await this.client.get(`/group/fetchAllGroups/${instanceName}`, {
+        params: { getParticipants: false },
+        timeout: 300000, // 5 minute timeout for this specific call
+      });
+      
+      const groups = response.data || [];
+      console.log(`[Evolution] fetchAllGroups returned ${groups.length} groups`);
+      
+      if (groups.length > 0) {
+        return groups.map((group: any) => ({
+          id: group.id,
+          type: 'group' as const,
+          name: group.subject || group.name || 'Unknown Group',
+          lastMessageAt: group.timestamp ? new Date(group.timestamp * 1000).toISOString() : undefined,
+        }));
+      }
+    } catch (error: any) {
+      console.warn('[Evolution] fetchAllGroups failed:', error.message);
+    }
     
-    return (response.data || []).map((group: any) => ({
-      id: group.id,
-      type: 'group' as const,
-      name: group.subject || group.name || 'Unknown Group',
-      lastMessageAt: group.timestamp ? new Date(group.timestamp * 1000).toISOString() : undefined,
-    }));
+    // Try alternative: fetch from chats endpoint and filter groups
+    try {
+      console.log(`[Evolution] Trying /chat/findChats/${instanceName} for groups`);
+      const response = await this.client.post(`/chat/findChats/${instanceName}`, {}, {
+        timeout: 300000,
+      });
+      
+      const chats = response.data || [];
+      console.log(`[Evolution] findChats returned ${chats.length} total chats`);
+      
+      const groups = chats.filter((chat: any) => 
+        chat.id?.endsWith('@g.us') || chat.remoteJid?.endsWith('@g.us')
+      );
+      
+      console.log(`[Evolution] Found ${groups.length} groups from findChats`);
+      
+      return groups.map((group: any) => ({
+        id: group.id || group.remoteJid,
+        type: 'group' as const,
+        name: group.name || group.pushName || group.subject || 'Unknown Group',
+        lastMessageAt: group.lastMsgTimestamp ? new Date(group.lastMsgTimestamp * 1000).toISOString() : undefined,
+      }));
+    } catch (error: any) {
+      console.warn('[Evolution] findChats for groups failed:', error.message);
+    }
+    
+    return [];
   }
   
   /**
    * Get all contacts/chats for an instance
+   * Tries multiple endpoints for compatibility
    */
   async listContacts(instanceName: string): Promise<Chat[]> {
+    // Try the primary contacts endpoint
     try {
-      const response = await this.client.get(`/chat/findContacts/${instanceName}`);
-      return (response.data || []).map((contact: any) => ({
+      console.log(`[Evolution] Fetching contacts via /chat/findContacts/${instanceName}`);
+      const response = await this.client.post(`/chat/findContacts/${instanceName}`, {}, {
+        timeout: 300000,
+      });
+      
+      const contacts = response.data || [];
+      console.log(`[Evolution] findContacts returned ${contacts.length} contacts`);
+      
+      if (contacts.length > 0) {
+        return contacts.map((contact: any) => ({
+          id: contact.id || contact.remoteJid,
+          type: 'direct' as const,
+          name: contact.pushName || contact.name || contact.id?.split('@')[0] || 'Unknown',
+          lastMessageAt: undefined,
+        }));
+      }
+    } catch (error: any) {
+      console.warn('[Evolution] findContacts failed:', error.message);
+    }
+    
+    // Try alternative: fetch from chats endpoint and filter direct messages
+    try {
+      console.log(`[Evolution] Trying /chat/findChats/${instanceName} for contacts`);
+      const response = await this.client.post(`/chat/findChats/${instanceName}`, {}, {
+        timeout: 300000,
+      });
+      
+      const chats = response.data || [];
+      console.log(`[Evolution] findChats returned ${chats.length} total chats`);
+      
+      const contacts = chats.filter((chat: any) => {
+        const id = chat.id || chat.remoteJid || '';
+        return id.endsWith('@s.whatsapp.net') || id.endsWith('@c.us');
+      });
+      
+      console.log(`[Evolution] Found ${contacts.length} contacts from findChats`);
+      
+      return contacts.map((contact: any) => ({
         id: contact.id || contact.remoteJid,
         type: 'direct' as const,
-        name: contact.pushName || contact.name || contact.id?.split('@')[0] || 'Unknown',
-        lastMessageAt: undefined,
+        name: contact.name || contact.pushName || (contact.id || contact.remoteJid)?.split('@')[0] || 'Unknown',
+        lastMessageAt: contact.lastMsgTimestamp ? new Date(contact.lastMsgTimestamp * 1000).toISOString() : undefined,
       }));
-    } catch (error) {
-      // Fallback: return empty array if endpoint not available
-      return [];
+    } catch (error: any) {
+      console.warn('[Evolution] findChats for contacts failed:', error.message);
     }
+    
+    return [];
   }
   
   /**
@@ -178,6 +258,25 @@ export class EvolutionClient {
     const response = await this.client.post(`/message/sendText/${instanceName}`, {
       number: to,
       text,
+    });
+    return response.data;
+  }
+  
+  /**
+   * Send media (image, document, audio, video)
+   */
+  async sendMedia(
+    instanceName: string, 
+    to: string, 
+    mediaUrl: string, 
+    mediaType: 'image' | 'document' | 'audio' | 'video' = 'image',
+    caption?: string
+  ): Promise<SendMessageResponse> {
+    const response = await this.client.post(`/message/sendMedia/${instanceName}`, {
+      number: to,
+      mediatype: mediaType,
+      media: mediaUrl,
+      caption: caption || '',
     });
     return response.data;
   }

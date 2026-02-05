@@ -2,16 +2,19 @@
 # Uses the official Evolution API Docker image as base
 
 ARG BUILD_FROM
+ARG BUILD_VERSION
+ARG BUILD_ARCH
+
 FROM evoapicloud/evolution-api:v2.3.7
 
-# Labels
+# Required Home Assistant Labels
 LABEL \
-    io.hass.name="Evolution API" \
-    io.hass.description="WhatsApp controller API for Home Assistant" \
-    io.hass.arch="aarch64|armv7|amd64" \
+    io.hass.name="WhatsApp Gateway" \
+    io.hass.description="Send and receive WhatsApp messages from Home Assistant" \
+    io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
-    io.hass.version="2.3.7" \
-    maintainer="Robin Bakker"
+    io.hass.version="${BUILD_VERSION}" \
+    maintainer="Robin Bakker <robin@bakeable.nl>"
 
 # Install bashio for Home Assistant integration, plus build tools for gateway
 RUN apk add --no-cache \

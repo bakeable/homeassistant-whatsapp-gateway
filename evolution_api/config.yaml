@@ -1,16 +1,23 @@
 # WhatsApp API Home Assistant Add-on Configuration
-name: WhatsApp API
-slug: whatsapp_api
-description: WhatsApp controller API (based on Evolution API) as a Home Assistant add-on. Connect WhatsApp to your smart home automations.
+# https://github.com/bakeable/ha-add-on-whatsapp-api
+
+name: WhatsApp Gateway
 version: "2.3.7"
+slug: whatsapp_gateway
+description: >-
+  Send and receive WhatsApp messages from Home Assistant. Provides a notify
+  service, automation triggers, and a web UI for managing your WhatsApp connection.
 url: https://github.com/bakeable/ha-add-on-whatsapp-api
 
 # Supported architectures
 arch:
   - aarch64
-  - armv7
   - amd64
-  
+  - armv7
+
+# Minimum Home Assistant version
+homeassistant: "2024.1.0"
+
 # Add-on behavior
 startup: services
 boot: auto
@@ -22,9 +29,11 @@ ingress: true
 ingress_port: 8099
 panel_icon: mdi:whatsapp
 panel_title: WhatsApp
+
+# Exposed ports
 ports:
-  8080/tcp: 8080
-  8099/tcp: 8099
+  8080/tcp: null
+  8099/tcp: null
 ports_description:
   8080/tcp: Evolution API REST API (internal)
   8099/tcp: WhatsApp Gateway UI
@@ -36,7 +45,7 @@ map:
 # User-configurable options
 options:
   api_key: ""
-  instance_name: "Home"
+  instance_name: "HomeAssistant"
   webhook_url: ""
   log_level: "INFO"
   database_provider: "mysql"
@@ -80,8 +89,17 @@ schema:
   allowed_services: str
 
 # Watchdog for auto-restart on failure
-watchdog: http://[HOST]:[PORT:8080]/
+watchdog: http://[HOST]:[PORT:8099]/api/health
 
 # API access
 homeassistant_api: true
 hassio_api: true
+auth_api: true
+
+# Discovery - advertise notify service to Home Assistant
+discovery:
+  - whatsapp
+
+# Services provided
+services:
+  - mqtt:want

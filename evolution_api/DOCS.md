@@ -1,8 +1,93 @@
-# Evolution API Add-on Documentation
+# WhatsApp Gateway Add-on Documentation
 
 ## Overview
 
-This add-on runs [Evolution API](https://github.com/EvolutionAPI/evolution-api) as a Home Assistant add-on with a custom **WhatsApp Gateway UI** that lets you:
+This add-on provides **WhatsApp messaging integration** for Home Assistant using [Evolution API](https://github.com/EvolutionAPI/evolution-api). It includes:
+
+- **Send messages** from Home Assistant automations using a REST command
+- **Receive messages** and trigger automations via webhook rules
+- **Web UI** for managing your WhatsApp connection, chats, and rules
+
+## Sending WhatsApp Messages from Home Assistant
+
+The add-on provides a REST API endpoint for sending messages that you can use from any automation.
+
+### Setup: Create a REST Command
+
+Add this to your `configuration.yaml`:
+
+```yaml
+rest_command:
+  send_whatsapp_message:
+    url: "http://localhost:8099/api/notify/send"
+    method: POST
+    content_type: "application/json"
+    payload: >
+      {
+        "target": "{{ target }}",
+        "message": "{{ message }}",
+        "title": "{{ title | default('') }}"
+      }
+```
+
+**Note:** When running as an add-on, use `http://a]_whatsapp_gateway:8099` as the URL, or if using Ingress, call via the Supervisor proxy.
+
+### Usage in Automations
+
+```yaml
+automation:
+  - alias: "Motion Alert via WhatsApp"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_door_motion
+        to: "on"
+    action:
+      - service: rest_command.send_whatsapp_message
+        data:
+          target: "1234567890"  # Phone number (or chat ID)
+          message: "🚨 Motion detected at the front door!"
+          title: "Security Alert"
+
+  - alias: "Daily Weather Report"
+    trigger:
+      - platform: time
+        at: "07:00:00"
+    action:
+      - service: rest_command.send_whatsapp_message
+        data:
+          target: "1234567890@s.whatsapp.net"
+          message: >
+            Good morning! Today's weather:
+            🌡️ {{ states('sensor.outdoor_temperature') }}°C
+            💧 {{ states('sensor.humidity') }}%
+```
+
+### Message Format
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `target` | Yes | Phone number (e.g., `1234567890`) or WhatsApp ID (e.g., `1234567890@s.whatsapp.net`) |
+| `message` | Yes | The message text to send |
+| `title` | No | Optional title (displayed in **bold** at the top) |
+| `data.image` | No | URL of an image to send |
+| `data.document` | No | URL of a document to send |
+
+### Sending to Groups
+
+To send to a group, use the group's JID (available in the Chats tab):
+
+```yaml
+- service: rest_command.send_whatsapp_message
+  data:
+    target: "120363123456789012@g.us"
+    message: "Message to the group!"
+```
+
+---
+
+## Gateway Features
+
+The add-on includes a custom **WhatsApp Gateway UI** that lets you:
 
 - **Connect WhatsApp** by scanning a QR code right from the Home Assistant interface
 - **Discover chats** and enable/disable which ones can trigger automations
@@ -32,10 +117,10 @@ If you have an existing MySQL/MariaDB server on your network, you can use that i
 2. **Add this repository** to your Home Assistant Add-on Store:
    - Go to **Settings** → **Add-ons** → **Add-on Store**
    - Click the **⋮** menu (top right) → **Repositories**
-   - Add: `https://github.com/robinbakker/ha-add-on-whatsapp-api`
+   - Add: `https://github.com/bakeable/ha-add-on-whatsapp-api`
    - Click **Add** → **Close**
 
-3. **Find "Evolution API"** in the add-on store and click **Install**
+3. **Find "WhatsApp Gateway"** in the add-on store and click **Install**
 
 4. **Configure the add-on** (see Configuration section below)
 

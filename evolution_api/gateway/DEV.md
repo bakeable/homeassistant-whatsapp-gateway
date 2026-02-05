@@ -15,6 +15,7 @@ npm run mock
 ```
 
 This starts a mock server on http://localhost:8099 that simulates:
+
 - WhatsApp connection status and QR code generation
 - Chat list management
 - Rule validation and testing
@@ -64,13 +65,13 @@ npm run test:e2e
 
 The Cypress tests cover:
 
-| Page | Test File | Coverage |
-|------|-----------|----------|
-| Setup | `setup.cy.ts` | QR generation, connection status, disconnect |
-| Chats | `chats.cy.ts` | List, filter, search, enable/disable, refresh |
-| Rules | `rules.cy.ts` | YAML editor, validation, guided builder, testing |
-| Logs | `logs.cy.ts` | Messages, rule fires, pagination, auto-refresh |
-| Navigation | `navigation.cy.ts` | Tab switching, URL routing |
+| Page       | Test File          | Coverage                                         |
+| ---------- | ------------------ | ------------------------------------------------ |
+| Setup      | `setup.cy.ts`      | QR generation, connection status, disconnect     |
+| Chats      | `chats.cy.ts`      | List, filter, search, enable/disable, refresh    |
+| Rules      | `rules.cy.ts`      | YAML editor, validation, guided builder, testing |
+| Logs       | `logs.cy.ts`       | Messages, rule fires, pagination, auto-refresh   |
+| Navigation | `navigation.cy.ts` | Tab switching, URL routing                       |
 
 ## Development Modes
 
@@ -114,12 +115,14 @@ docker-compose logs -f gateway
 ```
 
 **Services:**
+
 - **Evolution API**: http://localhost:8080 (WhatsApp API)
 - **Gateway UI**: http://localhost:8099 (The UI you're testing)
 - **MariaDB**: Internal database for Evolution API
 - **Redis**: Cache for Evolution API
 
 **Steps to test:**
+
 1. Open http://localhost:8099 in your browser
 2. Go to **Setup** tab → Click "Generate QR Code"
 3. Scan with WhatsApp on your phone
@@ -128,12 +131,14 @@ docker-compose logs -f gateway
 6. Test by sending a WhatsApp message
 
 **Rebuild after changes:**
+
 ```bash
 docker-compose build gateway
 docker-compose up -d gateway
 ```
 
 **Stop all services:**
+
 ```bash
 docker-compose down
 ```
@@ -167,16 +172,19 @@ This gives you hot reload on both backend and frontend while using the real Evol
 The mock server (`gateway/mock-server.ts`) provides:
 
 ### WhatsApp Simulation
+
 - **Auto-connect**: After generating QR code, auto-connects after 5 seconds
 - **Sample chats**: 4 pre-loaded chats (2 direct, 2 groups)
 - **Toggle enabled**: Persists chat enabled/disabled state in memory
 
 ### Rule Testing
+
 - **Validation**: Checks for `version:` and `rules:` in YAML
 - **Pattern matching**: Matches "goodnight" or "welterusten" keywords
 - **Preview actions**: Returns expected HA service calls and replies
 
 ### Logs
+
 - **Sample messages**: 2 pre-loaded messages
 - **Sample rule fires**: 2 pre-loaded successful executions
 
@@ -188,32 +196,38 @@ Custom commands available:
 
 ```typescript
 // Set up connected state
-cy.mockConnectedState()
+cy.mockConnectedState();
 
 // Set up disconnected state (shows QR)
-cy.mockDisconnectedState()
+cy.mockDisconnectedState();
 
 // Load sample chats
-cy.mockChats()
+cy.mockChats();
 
 // Load custom chats
 cy.mockChats([
-  { chat_id: 'custom@s.whatsapp.net', type: 'direct', name: 'Custom', enabled: true }
-])
+  {
+    chat_id: "custom@s.whatsapp.net",
+    type: "direct",
+    name: "Custom",
+    enabled: true,
+  },
+]);
 
 // Load rules
-cy.mockRules()
+cy.mockRules();
 
 // Load logs
-cy.mockLogs()
+cy.mockLogs();
 
 // Navigate
-cy.goToTab('Chats')
+cy.goToTab("Chats");
 ```
 
 ### Mock Server
 
 Edit `gateway/mock-server.ts` to:
+
 - Add more sample data
 - Change validation logic
 - Simulate errors
@@ -244,6 +258,7 @@ kill -9 <PID>
 ### Monaco Editor not loading
 
 Monaco Editor requires extra setup. If you see a blank editor:
+
 1. Check browser console for errors
 2. Ensure the CDN is accessible
 

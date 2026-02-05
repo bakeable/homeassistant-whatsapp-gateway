@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { waApi } from '../api'
 
 interface Chat {
@@ -9,6 +9,15 @@ interface Chat {
   last_message_at?: string
 }
 
+interface SyncProgress {
+  status: 'idle' | 'fetching_groups' | 'fetching_contacts' | 'saving' | 'complete' | 'error'
+  groupsCount: number
+  contactsCount: number
+  totalCount: number
+  currentStep: string
+  error: string | null
+}
+
 export default function ChatsPage() {
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,6 +25,8 @@ export default function ChatsPage() {
   const [filter, setFilter] = useState<'all' | 'group' | 'direct'>('all')
   const [search, setSearch] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load chats
   const loadChats = async () => {
@@ -33,29 +44,61 @@ export default function ChatsPage() {
     loadChats()
   }, [filter])
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+    }
+  }, [])
+
+  // Check sync progress
+  const checkProgress = async () => {
+    try {
+      const progress = await waApi.getRefreshStatus()
+      setSyncProgress(progress)
+      
+      // If complete or error, stop polling
+      if (progress.status === 'complete' || progress.status === 'error') {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        setRefreshing(false)
+        
+        // Reload chats on completion
+        if (progress.status === 'complete') {
+          await loadChats()
+        }
+        
+        // Clear progress after 5 seconds
+        setTimeout(() => {
+          setSyncProgress(null)
+        }, 5000)
+      }
+    } catch (e: any) {
+      console.error('Failed to check progress:', e)
+    }
+  }
+
   // Refresh chats from Evolution API
   const handleRefresh = async () => {
     setRefreshing(true)
     setError(null)
+    setSyncProgress(null)
+    
     try {
       const result = await waApi.refreshChats()
       
-      // Show initial response
-      if (result.status === 'started') {
-        alert('✅ Chat sync started!\n\nChats are being fetched in the background.\nThis may take 1-2 minutes for large contact lists.\n\nClick "Refresh" below to see new chats as they appear.')
+      if (result.status === 'already_running' || result.status === 'started') {
+        // Start polling for progress
+        checkProgress()
+        pollingRef.current = setInterval(checkProgress, 2000)
       }
-      
-      // Immediately reload to show any existing chats
-      await loadChats()
-      
-      // Auto-refresh after a delay to show synced chats
-      setTimeout(() => {
-        loadChats().catch(console.error)
-      }, 3000)
       
     } catch (e: any) {
       setError(e.message)
-    } finally {
       setRefreshing(false)
     }
   }
@@ -98,6 +141,59 @@ export default function ChatsPage() {
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
           {error}
+        </div>
+      )}
+
+      {/* Sync Progress */}
+      {syncProgress && syncProgress.status !== 'idle' && (
+        <div className="card">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">
+                {syncProgress.status === 'complete' ? '✅ Sync Complete' : 
+                 syncProgress.status === 'error' ? '❌ Sync Failed' :
+                 '🔄 Syncing Chats...'}
+              </h3>
+              {syncProgress.status === 'complete' && (
+                <span className="text-sm text-green-600">
+                  {syncProgress.totalCount} chats synced
+                </span>
+              )}
+            </div>
+            
+            {/* Progress Bar */}
+            {syncProgress.status !== 'complete' && syncProgress.status !== 'error' && (
+              <div className="space-y-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-wa-green h-2.5 rounded-full transition-all duration-500"
+                    style={{
+                      width: syncProgress.status === 'fetching_groups' ? '33%' :
+                             syncProgress.status === 'fetching_contacts' ? '66%' :
+                             syncProgress.status === 'saving' ? '90%' : '0%'
+                    }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-600">{syncProgress.currentStep}</p>
+              </div>
+            )}
+            
+            {/* Stats */}
+            {(syncProgress.groupsCount > 0 || syncProgress.contactsCount > 0) && (
+              <div className="flex gap-4 text-sm text-gray-600">
+                {syncProgress.groupsCount > 0 && (
+                  <span>👥 {syncProgress.groupsCount} groups</span>
+                )}
+                {syncProgress.contactsCount > 0 && (
+                  <span>👤 {syncProgress.contactsCount} contacts</span>
+                )}
+              </div>
+            )}
+            
+            {syncProgress.status === 'error' && syncProgress.error && (
+              <p className="text-sm text-red-600">{syncProgress.error}</p>
+            )}
+          </div>
         </div>
       )}
 

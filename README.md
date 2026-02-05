@@ -1,50 +1,59 @@
-# Home Assistant Add-on: Evolution API (WhatsApp)
+# Home Assistant Add-on: WhatsApp Gateway
 
-[![License](https://img.shields.io/github/license/robinbakker/ha-add-on-whatsapp-api.svg)](LICENSE)
-[![GitHub Release](https://img.shields.io/github/release/robinbakker/ha-add-on-whatsapp-api.svg)](https://github.com/robinbakker/ha-add-on-whatsapp-api/releases)
-[![CI](https://github.com/robinbakker/ha-add-on-whatsapp-api/workflows/CI/badge.svg)](https://github.com/robinbakker/ha-add-on-whatsapp-api/actions)
+[![License](https://img.shields.io/github/license/bakeable/ha-add-on-whatsapp-api.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/bakeable/ha-add-on-whatsapp-api.svg)](https://github.com/bakeable/ha-add-on-whatsapp-api/releases)
 
-A Home Assistant add-on repository containing Evolution API for WhatsApp integration.
+WhatsApp integration for Home Assistant using Evolution API.
+
+## About
+
+This add-on provides WhatsApp messaging capabilities for Home Assistant:
+
+- 📱 **Link your WhatsApp** account via QR code scan
+- 📤 **Send messages** to contacts and groups from automations
+- 📥 **Receive messages** and trigger automations via rules
+- 🔄 **Integrate with HA** automations, scripts, and services
+- 💾 **Persistent sessions** - survives restarts
+
+## Quick Start
+
+1. **Install the add-on** from this repository
+2. **Configure database** (MariaDB required)
+3. **Start** and open the Web UI
+4. **Scan QR code** with your phone
+5. **Create automations!**
 
 ## Installation
 
-1. Add this repository to your Home Assistant instance:
+Add this repository to your Home Assistant:
 
-   [![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Frobinbakker%2Fha-add-on-whatsapp-api)
+[![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fbakeable%2Fha-add-on-whatsapp-api)
 
-   Or manually:
-   - Go to **Settings** → **Add-ons** → **Add-on Store**
-   - Click ⋮ → **Repositories**
-   - Add: `https://github.com/robinbakker/ha-add-on-whatsapp-api`
+Or manually:
+- Go to **Settings** → **Add-ons** → **Add-on Store**
+- Click ⋮ → **Repositories**
+- Add: `https://github.com/bakeable/ha-add-on-whatsapp-api`
 
-2. Install "Evolution API" from the add-on store
+Then install "WhatsApp Gateway" from the add-on store.
 
-3. Configure and start the add-on
+## Sending Messages
 
-## Add-ons in this Repository
+Add this to your `configuration.yaml`:
 
-### Evolution API
+```yaml
+rest_command:
+  send_whatsapp_message:
+    url: "http://a]_whatsapp_gateway:8099/api/notify/send"
+    method: POST
+    content_type: "application/json"
+    payload: >
+      {
+        "target": "{{ target }}",
+        "message": "{{ message }}"
+      }
+```
 
-![Version](https://img.shields.io/badge/version-2.3.7-blue.svg)
-![Arch](https://img.shields.io/badge/arch-aarch64%20%7C%20amd64%20%7C%20armv7-green.svg)
-
-WhatsApp API integration using [Evolution API](https://github.com/EvolutionAPI/evolution-api).
-
-**⚠️ Requires MariaDB database** - Install the official MariaDB add-on first.
-
-**Features:**
-
-- 📱 Connect WhatsApp via QR code (Baileys/WhatsApp Web protocol)
-- 📤 Send text messages, media, and more
-- 📥 Receive messages via webhooks
-- 🔄 Full REST API access
-- 🖥️ Web UI for management
-
-[📖 Documentation](evolution_api/DOCS.md)
-
-## Example Automation
-
-Send a WhatsApp message when motion is detected:
+Then use it in automations:
 
 ```yaml
 automation:
@@ -54,30 +63,25 @@ automation:
         entity_id: binary_sensor.front_door_motion
         to: "on"
     action:
-      - service: rest_command.whatsapp_send
+      - service: rest_command.send_whatsapp_message
         data:
-          number: "1234567890"
+          target: "1234567890"
           message: "🚨 Motion detected at front door!"
 ```
 
-## Development
+## Use Cases
 
-### Local Testing with Docker Compose
+- 📢 Send notifications when motion is detected
+- 💬 Receive commands via WhatsApp ("turn on living room lights")
+- 🛒 Add items to shopping list from group chat
+- 🔔 Alert family members about security events
+- 🏠 Control your smart home from anywhere
 
-The easiest way to test locally is using Docker Compose:
+## Requirements
 
-```bash
-# Clone the repository
-git clone https://github.com/robinbakker/ha-add-on-whatsapp-api.git
-cd ha-add-on-whatsapp-api
+**⚠️ MariaDB database required** - Install the official MariaDB add-on first.
 
-# Start Evolution API with PostgreSQL and Redis
-docker-compose up -d
-
-# Check logs
-docker-compose logs -f evolution-api
-
-# Access the Manager UI at http://localhost:8080/manager
+See [📖 Full Documentation](evolution_api/DOCS.md) for detailed setup instructions.
 ```
 
 ## Development & Local Testing
