@@ -1,0 +1,70 @@
+name: Evolution API
+slug: evolution_api
+description: WhatsApp controller API (Evolution API) as a Home Assistant add-on. Connect WhatsApp to your smart home automations.
+version: "0.1.0"
+url: https://github.com/robinbakker/ha-add-on-whatsapp-api
+
+# Supported architectures
+arch:
+  - aarch64
+  - armv7
+  - amd64
+
+# Add-on behavior
+startup: services
+boot: auto
+init: false
+
+# Network configuration
+ingress: false
+panel_icon: mdi:whatsapp
+ports:
+  8080/tcp: 8080
+ports_description:
+  8080/tcp: Evolution API Web UI and REST API
+
+# Storage mappings
+map:
+  - addon_config:rw
+  - addon_data:rw
+
+# User-configurable options
+options:
+  server_type: http
+  server_port: 8080
+  server_url: "http://homeassistant.local:8080"
+  global_apikey: ""
+  log_level: "INFO"
+  database_enabled: true
+  database_provider: "postgresql"
+  database_connection_uri: ""
+  rabbitmq_enabled: false
+  rabbitmq_uri: ""
+  websocket_enabled: true
+  cors_origin: "*"
+  cors_methods: "GET,POST,PUT,DELETE"
+  cors_credentials: true
+
+# Schema for options validation
+schema:
+  server_type: list(http|https)
+  server_port: int
+  server_url: str
+  global_apikey: str?
+  log_level: list(DEBUG|INFO|WARN|ERROR)
+  database_enabled: bool
+  database_provider: list(postgresql|mysql)?
+  database_connection_uri: str?
+  rabbitmq_enabled: bool
+  rabbitmq_uri: str?
+  websocket_enabled: bool
+  cors_origin: str
+  cors_methods: str
+  cors_credentials: bool
+
+# Watchdog for auto-restart on failure
+watchdog: http://[HOST]:[PORT:8080]/
+
+# Minimum Home Assistant version
+homeassistant_api: true
+hassio_api: true

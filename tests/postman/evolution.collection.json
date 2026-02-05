@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "Evolution API - HA Add-on Tests",
+    "_postman_id": "evolution-api-ha-addon",
+    "description": "Test collection for Evolution API Home Assistant Add-on",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "instance_name",
+      "value": "test_instance",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server is running', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Instance Management",
+      "item": [
+        {
+          "name": "List Instances",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instance/fetchInstances",
+              "host": ["{{base_url}}"],
+              "path": ["instance", "fetchInstances"]
+            }
+          }
+        },
+        {
+          "name": "Create Instance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Instance created successfully', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Response contains instance info', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('instance');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"instanceName\": \"{{instance_name}}\",\n    \"qrcode\": true,\n    \"integration\": \"WHATSAPP-BAILEYS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instance/create",
+              "host": ["{{base_url}}"],
+              "path": ["instance", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Instance Connection State",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains state', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('instance');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instance/connectionState/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["instance", "connectionState", "{{instance_name}}"]
+            }
+          }
+        },
+        {
+          "name": "Get QR Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains QR or connection info', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // May have qrcode or already be connected",
+                  "    pm.expect(jsonData).to.satisfy(function(data) {",
+                  "        return data.hasOwnProperty('qrcode') || ",
+                  "               data.hasOwnProperty('base64') ||",
+                  "               data.hasOwnProperty('instance');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instance/connect/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["instance", "connect", "{{instance_name}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Instance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Instance deleted', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instance/delete/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["instance", "delete", "{{instance_name}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhook Configuration",
+      "item": [
+        {
+          "name": "Set Webhook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Webhook configured', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"url\": \"http://homeassistant.local:8123/api/webhook/whatsapp_test\",\n    \"webhook_by_events\": false,\n    \"webhook_base64\": false,\n    \"events\": [\n        \"MESSAGES_UPSERT\",\n        \"MESSAGES_UPDATE\",\n        \"CONNECTION_UPDATE\"\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhook/set/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "set", "{{instance_name}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Webhook Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhook/find/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "find", "{{instance_name}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messaging (requires connected instance)",
+      "item": [
+        {
+          "name": "Send Text Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This test may fail if instance is not connected",
+                  "pm.test('Message sent or instance not connected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"number\": \"1234567890\",\n    \"text\": \"Test message from HA add-on smoke test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/message/sendText/{{instance_name}}",
+              "host": ["{{base_url}}"],
+              "path": ["message", "sendText", "{{instance_name}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+newman-results.json
+*.log
+
+# Build artifacts
+dist/
+build/
+*.tar.gz
+
+# Local testing
+.local/
+data/
