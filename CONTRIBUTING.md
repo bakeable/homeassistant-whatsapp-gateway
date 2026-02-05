@@ -10,7 +10,7 @@ Please be respectful and constructive in all interactions.
 
 ### Reporting Bugs
 
-1. Check if the issue already exists in [GitHub Issues](https://github.com/robinbakker/ha-add-on-whatsapp-api/issues)
+1. Check if the issue already exists in [GitHub Issues](https://github.com/bakeable/homeassistant-whatsapp-add-on/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -49,8 +49,8 @@ Please be respectful and constructive in all interactions.
 1. Clone your fork:
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/ha-add-on-whatsapp-api.git
-   cd ha-add-on-whatsapp-api
+   git clone https://github.com/YOUR_USERNAME/homeassistant-whatsapp-add-on.git
+   cd homeassistant-whatsapp-add-on
    ```
 
 2. Build the Docker image:

@@ -15,5 +15,5 @@ args:
 labels:
   org.opencontainers.image.title: "Evolution API for Home Assistant"
   org.opencontainers.image.description: "WhatsApp API integration for Home Assistant"
-  org.opencontainers.image.source: "https://github.com/robinbakker/ha-add-on-whatsapp-api"
+  org.opencontainers.image.source: "https://github.com/bakeable/homeassistant-whatsapp-add-on"
   org.opencontainers.image.licenses: "Apache-2.0"

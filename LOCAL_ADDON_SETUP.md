@@ -35,7 +35,7 @@ Copy these files from your development machine to `/addons/local/whatsapp_gatewa
 
 ```bash
 # From your local machine
-cd /Users/robinbakker/GitHub/ha-add-on/ha-add-on-whatsapp-api/evolution_api
+cd /Users/bakeable/GitHub/ha-add-on/homeassistant-whatsapp-add-on/evolution_api
 
 # Copy to your HA (via SCP, Samba, or manual copy)
 # You need:
@@ -48,7 +48,7 @@ cd /Users/robinbakker/GitHub/ha-add-on/ha-add-on-whatsapp-api/evolution_api
 **Using SCP:**
 
 ```bash
-cd /Users/robinbakker/GitHub/ha-add-on/ha-add-on-whatsapp-api
+cd /Users/bakeable/GitHub/ha-add-on/homeassistant-whatsapp-add-on
 scp -r evolution_api root@homeassistant.local:/addons/local/whatsapp_gateway/
 ```
 
@@ -174,7 +174,7 @@ If you just want to test the gateway without the full add-on:
 # On your HA host
 cd /tmp
 git clone your-repo
-cd ha-add-on-whatsapp-api/evolution_api/gateway
+cd homeassistant-whatsapp-add-on/evolution_api/gateway
 
 # Run directly
 EVOLUTION_URL=http://localhost:8080 \

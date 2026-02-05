@@ -1,5 +1,5 @@
 {
   "name": "WhatsApp Gateway for Home Assistant",
-  "url": "https://github.com/bakeable/ha-add-on-whatsapp-api",
+  "url": "https://github.com/bakeable/homeassistant-whatsapp-add-on",
   "maintainer": "Robin Bakker <robin@bakeable.nl>"
 }

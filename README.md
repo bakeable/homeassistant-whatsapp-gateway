@@ -1,7 +1,7 @@
 # Home Assistant Add-on: WhatsApp Gateway
 
-[![License](https://img.shields.io/github/license/bakeable/ha-add-on-whatsapp-api.svg)](LICENSE)
-[![GitHub Release](https://img.shields.io/github/release/bakeable/ha-add-on-whatsapp-api.svg)](https://github.com/bakeable/ha-add-on-whatsapp-api/releases)
+[![License](https://img.shields.io/github/license/bakeable/homeassistant-whatsapp-add-on.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/bakeable/homeassistant-whatsapp-add-on.svg)](https://github.com/bakeable/homeassistant-whatsapp-add-on/releases)
 
 WhatsApp integration for Home Assistant using Evolution API.
 
@@ -27,13 +27,13 @@ This add-on provides WhatsApp messaging capabilities for Home Assistant:
 
 Add this repository to your Home Assistant:
 
-[![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fbakeable%2Fha-add-on-whatsapp-api)
+[![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fbakeable%2Fhomeassistant-whatsapp-add-on)
 
 Or manually:
 
 - Go to **Settings** → **Add-ons** → **Add-on Store**
 - Click ⋮ → **Repositories**
-- Add: `https://github.com/bakeable/ha-add-on-whatsapp-api`
+- Add: `https://github.com/bakeable/homeassistant-whatsapp-add-on`
 
 Then install "WhatsApp Gateway" from the add-on store.
 

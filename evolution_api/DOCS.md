@@ -136,7 +136,7 @@ If you have an existing MySQL/MariaDB server on your network, you can use that i
 2. **Add this repository** to your Home Assistant Add-on Store:
    - Go to **Settings** → **Add-ons** → **Add-on Store**
    - Click the **⋮** menu (top right) → **Repositories**
-   - Add: `https://github.com/bakeable/ha-add-on-whatsapp-api`
+   - Add: `https://github.com/bakeable/homeassistant-whatsapp-add-on`
    - Click **Add** → **Close**
 
 3. **Find "WhatsApp Gateway"** in the add-on store and click **Install**
@@ -537,5 +537,5 @@ rest_command:
 
 ## Support
 
-- [GitHub Issues](https://github.com/robinbakker/ha-add-on-whatsapp-api/issues)
+- [GitHub Issues](https://github.com/bakeable/homeassistant-whatsapp-add-on/issues)
 - [Evolution API Documentation](https://doc.evolution-api.com/)

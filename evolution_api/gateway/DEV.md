@@ -105,7 +105,7 @@ For integration testing with real Evolution API and WhatsApp:
 
 ```bash
 # From the root project directory
-cd /path/to/ha-add-on-whatsapp-api
+cd /path/to/homeassistant-whatsapp-add-on
 
 # Start all services (Evolution API + Gateway + databases)
 docker-compose up -d
