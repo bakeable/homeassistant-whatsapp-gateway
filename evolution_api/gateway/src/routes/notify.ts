@@ -6,12 +6,12 @@
  * registers via MQTT discovery for automatic integration
  */
 
-import type Database from 'better-sqlite3';
 import { Request, Response, Router } from 'express';
 import { EvolutionClient } from '../clients/evolution';
 import { loadConfig } from '../config';
+import { DatabasePool } from '../db/init';
 
-export function createNotifyRoutes(evolutionClient: EvolutionClient, db: Database.Database): Router {
+export function createNotifyRoutes(evolutionClient: EvolutionClient, db: DatabasePool): Router {
   const router = Router();
   const config = loadConfig();
   
@@ -69,18 +69,6 @@ export function createNotifyRoutes(evolutionClient: EvolutionClient, db: Databas
         fullMessage
       );
       
-      // Log the sent message
-      const logStmt = db.prepare(`
-        INSERT INTO log (level, source, message, details)
-        VALUES (?, ?, ?, ?)
-      `);
-      logStmt.run(
-        'INFO',
-        'notify',
-        `Message sent to ${target}`,
-        JSON.stringify({ target, message: fullMessage.substring(0, 100) })
-      );
-      
       // Send media if provided
       if (data?.image) {
         await evolutionClient.sendMedia(config.instanceName, chatId, data.image, 'image');
@@ -97,19 +85,6 @@ export function createNotifyRoutes(evolutionClient: EvolutionClient, db: Databas
       
     } catch (error: any) {
       console.error('[Notify] Send error:', error);
-      
-      // Log the error
-      const logStmt = db.prepare(`
-        INSERT INTO log (level, source, message, details)
-        VALUES (?, ?, ?, ?)
-      `);
-      logStmt.run(
-        'ERROR',
-        'notify',
-        `Failed to send message: ${error.message}`,
-        JSON.stringify({ error: error.message })
-      );
-      
       res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -180,9 +155,9 @@ export function createNotifyRoutes(evolutionClient: EvolutionClient, db: Databas
    */
   router.get('/targets', async (req: Request, res: Response) => {
     try {
-      const chats = db.prepare(`
-        SELECT id, name, type FROM wa_chat WHERE enabled = 1 ORDER BY name
-      `).all() as any[];
+      const chats = await db.getAll<any>(
+        'SELECT id, name, type FROM wa_chat WHERE enabled = 1 ORDER BY name'
+      );
       
       res.json(chats.map(c => ({
         id: c.id,

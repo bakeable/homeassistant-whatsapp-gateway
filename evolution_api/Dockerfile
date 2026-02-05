@@ -16,14 +16,11 @@ LABEL \
     io.hass.version="${BUILD_VERSION}" \
     maintainer="Robin Bakker <robin@bakeable.nl>"
 
-# Install bashio for Home Assistant integration, plus build tools for gateway
+# Install bashio for Home Assistant integration
 RUN apk add --no-cache \
     curl \
     jq \
-    bash \
-    python3 \
-    make \
-    g++
+    bash
 
 # Install bashio
 ARG BASHIO_VERSION="0.16.2"

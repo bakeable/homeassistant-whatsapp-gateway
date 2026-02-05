@@ -290,6 +290,15 @@ export HA_TOKEN="${SUPERVISOR_TOKEN}"
 export HA_ALLOWED_SERVICES="${HA_ALLOWED_SERVICES}"
 export INSTANCE_NAME="${INSTANCE_NAME}"
 
+# Database settings for gateway (same as Evolution API)
+if [ "$IN_HA" = true ]; then
+    export DB_HOST=$(bashio::config 'database_host')
+    export DB_PORT=$(bashio::config 'database_port')
+    export DB_USER=$(bashio::config 'database_user')
+    export DB_PASSWORD=$(bashio::config 'database_password')
+    export DB_NAME=$(bashio::config 'database_name')
+fi
+
 cd /gateway
 node dist/server.js &
 GATEWAY_PID=$!

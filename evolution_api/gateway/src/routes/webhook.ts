@@ -3,11 +3,11 @@
  * Handles incoming webhooks from Evolution API
  */
 
-import type Database from 'better-sqlite3';
 import { Request, Response, Router } from 'express';
+import { DatabasePool } from '../db/init';
 import { IncomingMessage, RuleEngine } from '../engine/rule-engine';
 
-export function createWebhookRoutes(db: Database.Database, ruleEngine: RuleEngine): Router {
+export function createWebhookRoutes(db: DatabasePool, ruleEngine: RuleEngine): Router {
   const router = Router();
   
   /**
@@ -39,7 +39,7 @@ export function createWebhookRoutes(db: Database.Database, ruleEngine: RuleEngin
    * GET /webhook/logs
    * Get recent webhook logs (messages received)
    */
-  router.get('/logs', (req: Request, res: Response) => {
+  router.get('/logs', async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const chatId = req.query.chat_id as string;
@@ -55,7 +55,7 @@ export function createWebhookRoutes(db: Database.Database, ruleEngine: RuleEngin
       sql += ' ORDER BY received_at DESC LIMIT ?';
       params.push(limit);
       
-      const messages = db.prepare(sql).all(...params);
+      const messages = await db.getAll<any>(sql, params);
       
       res.json(messages.map((m: any) => ({
         id: m.id,
@@ -81,7 +81,7 @@ export function createWebhookRoutes(db: Database.Database, ruleEngine: RuleEngin
  * Handle message.upsert events from Evolution API
  */
 async function handleMessageUpsert(
-  db: Database.Database,
+  db: DatabasePool,
   ruleEngine: RuleEngine,
   event: any
 ): Promise<void> {
@@ -126,17 +126,17 @@ async function handleMessageUpsert(
   const chatType = chatId.endsWith('@g.us') ? 'group' : 'direct';
   
   // Check for duplicate messages
-  const existing = db.prepare('SELECT id FROM wa_message WHERE provider_message_id = ?').get(messageId);
+  const existing = await db.getOne<any>('SELECT id FROM wa_message WHERE provider_message_id = ?', [messageId]);
   if (existing) {
     console.log('[Webhook] Skipping duplicate message:', messageId);
     return;
   }
   
   // Insert message into database
-  const result = db.prepare(`
+  const result = await db.run(`
     INSERT INTO wa_message (provider_message_id, chat_id, sender_id, sender_name, text, message_type, raw_payload)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `, [
     messageId,
     chatId,
     senderId,
@@ -144,17 +144,17 @@ async function handleMessageUpsert(
     text,
     'text',
     JSON.stringify(data)
-  );
+  ]);
   
-  const dbMessageId = result.lastInsertRowid as number;
+  const dbMessageId = result.insertId;
   
   // Update chat last message time
-  db.prepare(`
+  await db.run(`
     INSERT INTO wa_chat (id, type, name, last_message_at)
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(id) DO UPDATE SET
-      last_message_at = CURRENT_TIMESTAMP
-  `).run(chatId, chatType, senderName || chatId.split('@')[0]);
+    VALUES (?, ?, ?, NOW())
+    ON DUPLICATE KEY UPDATE
+      last_message_at = NOW()
+  `, [chatId, chatType, senderName || chatId.split('@')[0]]);
   
   console.log(`[Webhook] Message from ${senderName || senderId} in ${chatId}: "${text.substring(0, 50)}..."`);
   
@@ -171,5 +171,5 @@ async function handleMessageUpsert(
   await ruleEngine.processMessage(message, dbMessageId);
   
   // Mark as processed
-  db.prepare('UPDATE wa_message SET processed = 1 WHERE id = ?').run(dbMessageId);
+  await db.run('UPDATE wa_message SET processed = 1 WHERE id = ?', [dbMessageId]);
 }

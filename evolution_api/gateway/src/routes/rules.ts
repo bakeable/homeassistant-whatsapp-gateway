@@ -3,20 +3,20 @@
  * Endpoints for YAML rule management, validation, and testing
  */
 
-import type Database from 'better-sqlite3';
 import { Request, Response, Router } from 'express';
+import { DatabasePool } from '../db/init';
 import { RuleEngine } from '../engine/rule-engine';
 
-export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine): Router {
+export function createRulesRoutes(db: DatabasePool, ruleEngine: RuleEngine): Router {
   const router = Router();
   
   /**
    * GET /api/rules
    * Get current rules as YAML
    */
-  router.get('/', (req: Request, res: Response) => {
+  router.get('/', async (req: Request, res: Response) => {
     try {
-      const yaml = ruleEngine.getRulesYaml();
+      const yaml = await ruleEngine.getRulesYaml();
       res.json({ yaml });
     } catch (error: any) {
       console.error('[Rules] Get rules error:', error);
@@ -28,7 +28,7 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
    * PUT /api/rules
    * Save rules (validate and store)
    */
-  router.put('/', (req: Request, res: Response) => {
+  router.put('/', async (req: Request, res: Response) => {
     try {
       const { yaml } = req.body;
       
@@ -36,7 +36,7 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
         return res.status(400).json({ error: 'YAML content is required' });
       }
       
-      const result = ruleEngine.saveRules(yaml);
+      const result = await ruleEngine.saveRules(yaml);
       
       if (result.valid) {
         res.json({
@@ -118,7 +118,7 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
    * GET /api/rules/fires
    * Get recent rule fire logs
    */
-  router.get('/fires', (req: Request, res: Response) => {
+  router.get('/fires', async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const ruleId = req.query.rule_id as string;
@@ -141,7 +141,7 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
       sql += ' ORDER BY rf.fired_at DESC LIMIT ?';
       params.push(limit);
       
-      const fires = db.prepare(sql).all(...params);
+      const fires = await db.getAll<any>(sql, params);
       
       res.json(fires.map((f: any) => ({
         id: f.id,
@@ -150,7 +150,7 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
         chat_id: f.chat_id,
         sender_id: f.sender_id,
         matched_text: f.matched_text,
-        actions_executed: f.actions_executed ? JSON.parse(f.actions_executed) : [],
+        actions_executed: f.actions_executed ? (typeof f.actions_executed === 'string' ? JSON.parse(f.actions_executed) : f.actions_executed) : [],
         success: f.success === 1,
         error_message: f.error_message,
         fired_at: f.fired_at,
@@ -166,9 +166,9 @@ export function createRulesRoutes(db: Database.Database, ruleEngine: RuleEngine)
    * POST /api/rules/reload
    * Reload rules from database
    */
-  router.post('/reload', (req: Request, res: Response) => {
+  router.post('/reload', async (req: Request, res: Response) => {
     try {
-      ruleEngine.reloadRules();
+      await ruleEngine.reloadRules();
       res.json({ success: true });
     } catch (error: any) {
       console.error('[Rules] Reload error:', error);

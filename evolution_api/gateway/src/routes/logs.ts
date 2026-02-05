@@ -1,14 +1,14 @@
-import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
+import { DatabasePool } from '../db/init';
 
-export function createLogsRoutes(db: Database): Router {
+export function createLogsRoutes(db: DatabasePool): Router {
   const router = Router();
 
   /**
    * GET /api/logs/messages
    * Get recent messages with pagination
    */
-  router.get('/messages', (req, res) => {
+  router.get('/messages', async (req, res) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
@@ -41,7 +41,7 @@ export function createLogsRoutes(db: Database): Router {
       query += ' ORDER BY m.received_at DESC LIMIT ? OFFSET ?';
       params.push(limit, offset);
 
-      const messages = db.prepare(query).all(...params);
+      const messages = await db.getAll<any>(query, params);
       res.json(messages);
     } catch (e: any) {
       console.error('[Logs] Error fetching messages:', e.message);
@@ -53,7 +53,7 @@ export function createLogsRoutes(db: Database): Router {
    * GET /api/logs/rules
    * Get rule fire history with pagination
    */
-  router.get('/rules', (req, res) => {
+  router.get('/rules', async (req, res) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
@@ -85,11 +85,11 @@ export function createLogsRoutes(db: Database): Router {
       query += ' ORDER BY f.fired_at DESC LIMIT ? OFFSET ?';
       params.push(limit, offset);
 
-      const fires = db.prepare(query).all(...params);
+      const fires = await db.getAll<any>(query, params);
       
       // Parse actions_executed and flatten for UI
       const result = fires.map((f: any) => {
-        const actions = f.actions_executed ? JSON.parse(f.actions_executed) : [];
+        const actions = f.actions_executed ? (typeof f.actions_executed === 'string' ? JSON.parse(f.actions_executed) : f.actions_executed) : [];
         const firstAction = actions[0] || {};
         return {
           id: f.id,
@@ -116,46 +116,51 @@ export function createLogsRoutes(db: Database): Router {
    * GET /api/logs/stats
    * Get summary statistics
    */
-  router.get('/stats', (req, res) => {
+  router.get('/stats', async (req, res) => {
     try {
       const hours = Math.min(168, Math.max(1, parseInt(req.query.hours as string) || 24));
       const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-      const messageCount = db.prepare(`
-        SELECT COUNT(*) as count FROM wa_message WHERE received_at > ?
-      `).get(since) as { count: number };
+      const messageCount = await db.getOne<{ count: number }>(
+        'SELECT COUNT(*) as count FROM wa_message WHERE received_at > ?',
+        [since]
+      );
 
-      const processedCount = db.prepare(`
-        SELECT COUNT(*) as count FROM wa_message WHERE received_at > ? AND processed = 1
-      `).get(since) as { count: number };
+      const processedCount = await db.getOne<{ count: number }>(
+        'SELECT COUNT(*) as count FROM wa_message WHERE received_at > ? AND processed = 1',
+        [since]
+      );
 
-      const ruleFireCount = db.prepare(`
-        SELECT COUNT(*) as count FROM wa_rule_fire WHERE fired_at > ?
-      `).get(since) as { count: number };
+      const ruleFireCount = await db.getOne<{ count: number }>(
+        'SELECT COUNT(*) as count FROM wa_rule_fire WHERE fired_at > ?',
+        [since]
+      );
 
-      const successCount = db.prepare(`
-        SELECT COUNT(*) as count FROM wa_rule_fire WHERE fired_at > ? AND success = 1
-      `).get(since) as { count: number };
+      const successCount = await db.getOne<{ count: number }>(
+        'SELECT COUNT(*) as count FROM wa_rule_fire WHERE fired_at > ? AND success = 1',
+        [since]
+      );
 
-      const topRules = db.prepare(`
-        SELECT rule_id, rule_name, COUNT(*) as fire_count
-        FROM wa_rule_fire 
-        WHERE fired_at > ?
-        GROUP BY rule_id
-        ORDER BY fire_count DESC
-        LIMIT 5
-      `).all(since);
+      const topRules = await db.getAll<any>(
+        `SELECT rule_id, rule_name, COUNT(*) as fire_count
+         FROM wa_rule_fire 
+         WHERE fired_at > ?
+         GROUP BY rule_id
+         ORDER BY fire_count DESC
+         LIMIT 5`,
+        [since]
+      );
 
       res.json({
         period_hours: hours,
         messages: {
-          total: messageCount.count,
-          processed: processedCount.count,
+          total: messageCount?.count || 0,
+          processed: processedCount?.count || 0,
         },
         rule_fires: {
-          total: ruleFireCount.count,
-          successful: successCount.count,
-          failed: ruleFireCount.count - successCount.count,
+          total: ruleFireCount?.count || 0,
+          successful: successCount?.count || 0,
+          failed: (ruleFireCount?.count || 0) - (successCount?.count || 0),
         },
         top_rules: topRules,
       });

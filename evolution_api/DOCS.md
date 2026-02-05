@@ -4,22 +4,35 @@
 
 This add-on provides **WhatsApp messaging integration** for Home Assistant using [Evolution API](https://github.com/EvolutionAPI/evolution-api). It includes:
 
-- **Send messages** from Home Assistant automations using a REST command
+- **Send messages** from Home Assistant automations (no configuration required!)
 - **Receive messages** and trigger automations via webhook rules
 - **Web UI** for managing your WhatsApp connection, chats, and rules
 
 ## Sending WhatsApp Messages from Home Assistant
 
-The add-on provides a REST API endpoint for sending messages that you can use from any automation.
+### Option 1: Using Service Discovery (Recommended - Zero Configuration!)
 
-### Setup: Create a REST Command
+The add-on automatically registers itself with Home Assistant via the Supervisor Discovery API. Once your WhatsApp is connected, you can immediately send messages using a simple REST command without any manual configuration.
 
-Add this to your `configuration.yaml`:
+The add-on exposes a `whatsapp` service that Home Assistant can discover. Use this URL in your automations:
+
+```yaml
+# In automations, use the internal add-on URL
+action:
+  - service: rest_command.send_whatsapp
+    data:
+      target: "1234567890"
+      message: "Hello from Home Assistant!"
+```
+
+### Option 2: Manual REST Command Setup
+
+If you prefer manual configuration, add this to your `configuration.yaml`:
 
 ```yaml
 rest_command:
   send_whatsapp_message:
-    url: "http://localhost:8099/api/notify/send"
+    url: "http://a]_whatsapp_gateway:8099/api/notify/send"
     method: POST
     content_type: "application/json"
     payload: >
@@ -30,7 +43,7 @@ rest_command:
       }
 ```
 
-**Note:** When running as an add-on, use `http://a]_whatsapp_gateway:8099` as the URL, or if using Ingress, call via the Supervisor proxy.
+> **Note:** Replace `a]_whatsapp_gateway` with the actual add-on hostname. For local development use `localhost:8099`.
 
 ### Usage in Automations
 
@@ -64,13 +77,19 @@ automation:
 
 ### Message Format
 
-| Parameter       | Required | Description                                                                          |
-| --------------- | -------- | ------------------------------------------------------------------------------------ |
-| `target`        | Yes      | Phone number (e.g., `1234567890`) or WhatsApp ID (e.g., `1234567890@s.whatsapp.net`) |
-| `message`       | Yes      | The message text to send                                                             |
-| `title`         | No       | Optional title (displayed in **bold** at the top)                                    |
-| `data.image`    | No       | URL of an image to send                                                              |
-| `data.document` | No       | URL of a document to send                                                            |
+| Parameter       | Required | Description                                                                                     |
+| --------------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `target`        | Yes      | Phone number (e.g., `1234567890`) or WhatsApp ID (e.g., `1234567890@s.whatsapp.net`)            |
+| `message`       | Yes      | The message text to send                                                                        |
+| `title`         | No       | Optional title (displayed in **bold** at the top)                                               |
+| `data.image`    | No       | URL of an image to send                                                                         |
+| `data.document` | No       | URL of a document to send                                                                       |
+
+### Phone Number Format
+
+- Use the phone number **without** the `+` sign
+- Include the country code (e.g., `31612345678` for Netherlands)
+- For groups, use the Group ID from the Chats tab (e.g., `120363123456789012@g.us`)
 
 ### Sending to Groups
 

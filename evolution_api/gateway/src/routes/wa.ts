@@ -3,12 +3,12 @@
  * Handles instance creation, QR connection, status, and chat listing
  */
 
-import type Database from 'better-sqlite3';
 import { Request, Response, Router } from 'express';
 import { Chat, EvolutionClient } from '../clients/evolution';
 import { loadConfig } from '../config';
+import { DatabasePool } from '../db/init';
 
-export function createWaRoutes(evolutionClient: EvolutionClient, db: Database.Database): Router {
+export function createWaRoutes(evolutionClient: EvolutionClient, db: DatabasePool): Router {
   const router = Router();
   const config = loadConfig();
   
@@ -116,12 +116,13 @@ export function createWaRoutes(evolutionClient: EvolutionClient, db: Database.Da
       
       sql += ' ORDER BY name';
       
-      const chats = db.prepare(sql).all(...params);
+      const chats = await db.getAll<any>(sql, params);
       
       res.json(chats.map((c: any) => ({
         chat_id: c.id,
         type: c.type,
         name: c.name,
+        phone_number: c.phone_number,
         enabled: c.enabled === 1,
         last_message_at: c.last_message_at,
       })));
@@ -268,28 +269,63 @@ export function createWaRoutes(evolutionClient: EvolutionClient, db: Database.Da
           refreshProgress.status = 'saving';
           refreshProgress.currentStep = 'Saving to database...';
           
-          const allChats: Chat[] = [...groups, ...contacts];
+          // Mark sync start time to clean stale records later
+          const syncStartTime = new Date().toISOString();
+          
+          // Deduplicate: prefer groups over direct, merge by ID
+          const chatMap = new Map<string, Chat>();
+          for (const chat of [...groups, ...contacts]) {
+            const existing = chatMap.get(chat.id);
+            if (!existing) {
+              chatMap.set(chat.id, chat);
+            } else {
+              // Prefer the one with more info (longer name, or has lastMessageAt)
+              if ((chat.name?.length || 0) > (existing.name?.length || 0) || 
+                  (chat.lastMessageAt && !existing.lastMessageAt)) {
+                chatMap.set(chat.id, { ...existing, ...chat });
+              }
+            }
+          }
+          
+          const allChats: Chat[] = Array.from(chatMap.values());
           refreshProgress.totalCount = allChats.length;
           
-          const upsert = db.prepare(`
-            INSERT INTO wa_chat (id, type, name, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(id) DO UPDATE SET
-              name = excluded.name,
-              updated_at = CURRENT_TIMESTAMP
-          `);
-          
-          const insertMany = db.transaction((chats: Chat[]) => {
-            for (const chat of chats) {
-              upsert.run(chat.id, chat.type, chat.name);
+          // Insert/update chats using transaction
+          await db.transaction(async (conn) => {
+            for (const chat of allChats) {
+              await conn.execute(`
+                INSERT INTO wa_chat (id, type, name, phone_number, last_message_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE
+                  name = VALUES(name),
+                  phone_number = COALESCE(VALUES(phone_number), phone_number),
+                  last_message_at = COALESCE(VALUES(last_message_at), last_message_at),
+                  updated_at = NOW()
+              `, [
+                chat.id, 
+                chat.type, 
+                chat.name, 
+                chat.phoneNumber || null,
+                chat.lastMessageAt || null
+              ]);
             }
           });
           
-          insertMany(allChats);
+          // Clean up stale records that weren't updated during this sync
+          // Only delete records with old IDs that don't have valid WhatsApp format
+          const deleteResult = await db.run(`
+            DELETE FROM wa_chat 
+            WHERE updated_at < ? 
+            OR (id NOT LIKE '%@s.whatsapp.net' AND id NOT LIKE '%@g.us' AND id NOT LIKE '%@c.us')
+          `, [syncStartTime]);
+          const deletedCount = deleteResult.affectedRows;
+          if (deletedCount > 0) {
+            console.log(`[WA] Cleaned up ${deletedCount} stale/invalid chat records`);
+          }
           
           // Complete
           refreshProgress.status = 'complete';
-          refreshProgress.currentStep = `Successfully synced ${allChats.length} chats`;
+          refreshProgress.currentStep = `Successfully synced ${allChats.length} chats, cleaned ${deletedCount} stale records`;
           refreshProgress.completedAt = new Date();
           
           console.log(`[WA] Chat refresh complete: ${allChats.length} total chats`);
@@ -326,8 +362,10 @@ export function createWaRoutes(evolutionClient: EvolutionClient, db: Database.Da
       const { enabled } = req.body;
       
       if (enabled !== undefined) {
-        db.prepare('UPDATE wa_chat SET enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(enabled ? 1 : 0, chatId);
+        await db.run(
+          'UPDATE wa_chat SET enabled = ?, updated_at = NOW() WHERE id = ?',
+          [enabled ? 1 : 0, chatId]
+        );
       }
       
       res.json({ success: true });

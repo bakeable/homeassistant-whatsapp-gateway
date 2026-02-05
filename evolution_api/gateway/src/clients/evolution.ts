@@ -217,21 +217,22 @@ export class EvolutionClient {
       console.log(`[Evolution] findContacts returned ${contacts.length} contacts`);
       
       if (contacts.length > 0) {
-        // Filter to only include actual contacts (not groups)
+        // Filter to only include actual contacts (not groups) - use remoteJid for filtering
         const actualContacts = contacts.filter((c: any) => {
-          const id = c.id || c.remoteJid || '';
-          return !id.endsWith('@g.us') && !id.endsWith('@broadcast');
+          const jid = c.remoteJid || c.id || '';
+          return jid.endsWith('@s.whatsapp.net') || jid.endsWith('@c.us');
         });
         console.log(`[Evolution] Filtered to ${actualContacts.length} actual contacts`);
         
         return actualContacts.map((contact: any) => {
-          const id = contact.id || contact.remoteJid || '';
-          const phoneNumber = id.split('@')[0];
+          // Use remoteJid as the WhatsApp ID (not the internal database id)
+          const jid = contact.remoteJid || contact.id || '';
+          const phoneNumber = jid.split('@')[0];
           // Prefer full name, then pushName, then phone number
           const name = contact.name || contact.pushName || contact.verifiedName || phoneNumber || 'Unknown';
           
           return {
-            id,
+            id: jid,
             type: 'direct' as const,
             name,
             phoneNumber,
@@ -256,20 +257,20 @@ export class EvolutionClient {
       console.log(`[Evolution] findChats returned ${chats.length} total chats`);
       
       const contacts = chats.filter((chat: any) => {
-        const id = chat.id || chat.remoteJid || '';
-        return id.endsWith('@s.whatsapp.net') || id.endsWith('@c.us');
+        const jid = chat.remoteJid || chat.id || '';
+        return jid.endsWith('@s.whatsapp.net') || jid.endsWith('@c.us');
       });
       
       console.log(`[Evolution] Found ${contacts.length} contacts from findChats`);
       
       return contacts.map((contact: any) => {
-        const id = contact.id || contact.remoteJid || '';
-        const phoneNumber = id.split('@')[0];
+        const jid = contact.remoteJid || contact.id || '';
+        const phoneNumber = jid.split('@')[0];
         // Prefer full name, then pushName, then phone number
         const name = contact.name || contact.pushName || contact.verifiedName || phoneNumber || 'Unknown';
         
         return {
-          id,
+          id: jid,
           type: 'direct' as const,
           name,
           phoneNumber,

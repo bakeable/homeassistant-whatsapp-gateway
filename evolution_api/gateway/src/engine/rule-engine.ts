@@ -4,11 +4,11 @@
  */
 
 import Ajv from 'ajv';
-import type Database from 'better-sqlite3';
 import yaml from 'js-yaml';
 import { EvolutionClient } from '../clients/evolution';
 import { HAClient } from '../clients/ha';
 import { loadConfig } from '../config';
+import { DatabasePool } from '../db/init';
 import {
     Rule,
     RULE_SCHEMA,
@@ -28,31 +28,36 @@ export interface IncomingMessage {
 }
 
 export class RuleEngine {
-  private db: Database.Database;
+  private db: DatabasePool;
   private haClient: HAClient;
   private evolutionClient: EvolutionClient;
   private config = loadConfig();
   private rulesCache: RuleSet | null = null;
   private ajv: Ajv;
   
-  constructor(db: Database.Database, haClient: HAClient, evolutionClient: EvolutionClient) {
+  constructor(db: DatabasePool, haClient: HAClient, evolutionClient: EvolutionClient) {
     this.db = db;
     this.haClient = haClient;
     this.evolutionClient = evolutionClient;
     this.ajv = new Ajv({ allErrors: true, verbose: true });
-    
-    // Load rules into cache on startup
-    this.reloadRules();
+  }
+  
+  /**
+   * Initialize the rule engine (load rules from database)
+   */
+  async init(): Promise<void> {
+    await this.reloadRules();
   }
   
   /**
    * Reload rules from database into memory cache
    */
-  reloadRules(): void {
-    const row = this.db.prepare('SELECT parsed_json FROM wa_ruleset WHERE id = 1').get() as any;
+  async reloadRules(): Promise<void> {
+    const row = await this.db.getOne<any>('SELECT parsed_json FROM wa_ruleset WHERE id = 1');
     if (row?.parsed_json) {
       try {
-        this.rulesCache = JSON.parse(row.parsed_json);
+        const parsed = typeof row.parsed_json === 'string' ? JSON.parse(row.parsed_json) : row.parsed_json;
+        this.rulesCache = parsed;
         console.log(`[RuleEngine] Loaded ${this.rulesCache?.rules?.length || 0} rules`);
       } catch (e) {
         console.error('[RuleEngine] Failed to parse cached rules:', e);
@@ -143,7 +148,7 @@ export class RuleEngine {
   /**
    * Save rules to database
    */
-  saveRules(yamlText: string): ValidationResult {
+  async saveRules(yamlText: string): Promise<ValidationResult> {
     const validation = this.validateYaml(yamlText);
     
     if (!validation.valid) {
@@ -153,11 +158,11 @@ export class RuleEngine {
     const parsed = yaml.load(yamlText) as RuleSet;
     const parsedJson = JSON.stringify(parsed);
     
-    this.db.prepare(`
+    await this.db.run(`
       UPDATE wa_ruleset 
-      SET yaml_text = ?, parsed_json = ?, version = version + 1, updated_at = CURRENT_TIMESTAMP
+      SET yaml_text = ?, parsed_json = ?, version = version + 1, updated_at = NOW()
       WHERE id = 1
-    `).run(yamlText, parsedJson);
+    `, [yamlText, parsedJson]);
     
     // Reload cache
     this.rulesCache = parsed;
@@ -169,8 +174,8 @@ export class RuleEngine {
   /**
    * Get current rules as YAML
    */
-  getRulesYaml(): string {
-    const row = this.db.prepare('SELECT yaml_text FROM wa_ruleset WHERE id = 1').get() as any;
+  async getRulesYaml(): Promise<string> {
+    const row = await this.db.getOne<any>('SELECT yaml_text FROM wa_ruleset WHERE id = 1');
     return row?.yaml_text || 'version: 1\nrules: []';
   }
   
@@ -231,7 +236,7 @@ export class RuleEngine {
     
     for (const rule of sortedRules) {
       // Check cooldown
-      if (this.isOnCooldown(rule.id, message.chatId)) {
+      if (await this.isOnCooldown(rule.id, message.chatId)) {
         console.log(`[RuleEngine] Rule ${rule.id} is on cooldown for chat ${message.chatId}`);
         continue;
       }
@@ -245,11 +250,11 @@ export class RuleEngine {
         const results = await this.executeActions(rule, message);
         
         // Log the rule fire
-        this.logRuleFire(rule, message, dbMessageId, results);
+        await this.logRuleFire(rule, message, dbMessageId, results);
         
         // Set cooldown if configured
         if (rule.cooldown_seconds && rule.cooldown_seconds > 0) {
-          this.setCooldown(rule.id, message.chatId, rule.cooldown_seconds);
+          await this.setCooldown(rule.id, message.chatId, rule.cooldown_seconds);
         }
         
         if (rule.stop_on_match !== false) {
@@ -375,14 +380,14 @@ export class RuleEngine {
   /**
    * Check if a rule is on cooldown
    */
-  private isOnCooldown(ruleId: string, scopeKey: string): boolean {
+  private async isOnCooldown(ruleId: string, scopeKey: string): Promise<boolean> {
     // Clean up expired cooldowns
-    this.db.prepare('DELETE FROM wa_cooldown WHERE expires_at < datetime("now")').run();
+    await this.db.run('DELETE FROM wa_cooldown WHERE expires_at < NOW()');
     
-    const row = this.db.prepare(`
+    const row = await this.db.getOne<any>(`
       SELECT 1 FROM wa_cooldown 
-      WHERE rule_id = ? AND scope_key = ? AND expires_at > datetime("now")
-    `).get(ruleId, scopeKey);
+      WHERE rule_id = ? AND scope_key = ? AND expires_at > NOW()
+    `, [ruleId, scopeKey]);
     
     return !!row;
   }
@@ -390,31 +395,32 @@ export class RuleEngine {
   /**
    * Set cooldown for a rule
    */
-  private setCooldown(ruleId: string, scopeKey: string, seconds: number): void {
-    this.db.prepare(`
-      INSERT OR REPLACE INTO wa_cooldown (rule_id, scope_key, expires_at)
-      VALUES (?, ?, datetime("now", "+" || ? || " seconds"))
-    `).run(ruleId, scopeKey, seconds);
+  private async setCooldown(ruleId: string, scopeKey: string, seconds: number): Promise<void> {
+    await this.db.run(`
+      INSERT INTO wa_cooldown (rule_id, scope_key, expires_at)
+      VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))
+      ON DUPLICATE KEY UPDATE expires_at = DATE_ADD(NOW(), INTERVAL ? SECOND)
+    `, [ruleId, scopeKey, seconds, seconds]);
   }
   
   /**
    * Log a rule fire to the database
    */
-  private logRuleFire(
+  private async logRuleFire(
     rule: Rule,
     message: IncomingMessage,
     dbMessageId: number | undefined,
     results: Array<{ type: string; success: boolean; error?: string }>
-  ): void {
+  ): Promise<void> {
     const allSuccess = results.every(r => r.success);
     const errors = results.filter(r => !r.success).map(r => r.error).join('; ');
     
-    this.db.prepare(`
+    await this.db.run(`
       INSERT INTO wa_rule_fire (
         rule_id, rule_name, message_id, chat_id, sender_id, matched_text,
         actions_executed, success, error_message
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, [
       rule.id,
       rule.name,
       dbMessageId || null,
@@ -424,7 +430,7 @@ export class RuleEngine {
       JSON.stringify(results),
       allSuccess ? 1 : 0,
       errors || null
-    );
+    ]);
   }
   
   /**

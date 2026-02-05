@@ -8,6 +8,13 @@ export interface Config {
   gatewayPort: number;
   dataPath: string;
   
+  // Database (MariaDB)
+  dbHost: string;
+  dbPort: number;
+  dbUser: string;
+  dbPassword: string;
+  dbName: string;
+  
   // Evolution API
   evolutionUrl: string;
   apiKey: string;
@@ -26,6 +33,13 @@ export function loadConfig(): Config {
     // Gateway port (separate from Evolution's 8080)
     gatewayPort: parseInt(process.env.GATEWAY_PORT || '8099', 10),
     dataPath: process.env.DATA_PATH || '/data',
+    
+    // Database settings (same as Evolution API)
+    dbHost: process.env.DB_HOST || 'localhost',
+    dbPort: parseInt(process.env.DB_PORT || '3306', 10),
+    dbUser: process.env.DB_USER || 'evolution',
+    dbPassword: process.env.DB_PASSWORD || '',
+    dbName: process.env.DB_NAME || 'evolution',
     
     // Evolution API settings
     evolutionUrl: process.env.EVOLUTION_URL || 'http://localhost:8080',

@@ -99,6 +99,12 @@ services:
       EVOLUTION_URL: http://evolution-api:8080
       EVOLUTION_API_KEY: test-api-key-change-me
       INSTANCE_NAME: Home
+      # Database (shared with Evolution API)
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: evolution
+      DB_PASSWORD: evolution_pass
+      DB_NAME: evolution
       # Mock HA for local dev (use http://host.docker.internal:8123 for real HA)
       HA_URL: http://gateway:8099/mock-ha
       HA_TOKEN: mock-token
@@ -106,7 +112,10 @@ services:
     volumes:
       - gateway_data:/data/gateway
     depends_on:
-      - evolution-api
+      mariadb:
+        condition: service_healthy
+      evolution-api:
+        condition: service_started
 
 volumes:
   mariadb_data:
