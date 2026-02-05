@@ -1,67 +1,82 @@
-import { useState } from 'react'
-import { waApi } from '../api'
+import { useState } from "react";
+import { waApi } from "../api";
 
 export default function TestPage() {
-  const [recipient, setRecipient] = useState('')
-  const [message, setMessage] = useState('')
-  const [mediaUrl, setMediaUrl] = useState('')
-  const [mediaType, setMediaType] = useState<'image' | 'document' | 'audio' | 'video'>('image')
-  const [sending, setSending] = useState(false)
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [recipient, setRecipient] = useState("");
+  const [message, setMessage] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaType, setMediaType] = useState<
+    "image" | "document" | "audio" | "video"
+  >("image");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const handleSendText = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!recipient || !message) {
-      setResult({ success: false, message: 'Recipient and message are required' })
-      return
+      setResult({
+        success: false,
+        message: "Recipient and message are required",
+      });
+      return;
     }
 
-    setSending(true)
-    setResult(null)
+    setSending(true);
+    setResult(null);
 
     try {
-      const response = await waApi.sendTestMessage(recipient, message)
+      const response = await waApi.sendTestMessage(recipient, message);
       setResult({
         success: true,
-        message: `✅ Message sent successfully! ID: ${response.message_id || 'N/A'}`,
-      })
-      setMessage('')
+        message: `✅ Message sent successfully! ID: ${response.message_id || "N/A"}`,
+      });
+      setMessage("");
     } catch (error: any) {
       setResult({
         success: false,
         message: `❌ Failed to send: ${error.message}`,
-      })
+      });
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const handleSendMedia = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!recipient || !mediaUrl) {
-      setResult({ success: false, message: 'Recipient and media URL are required' })
-      return
+      setResult({
+        success: false,
+        message: "Recipient and media URL are required",
+      });
+      return;
     }
 
-    setSending(true)
-    setResult(null)
+    setSending(true);
+    setResult(null);
 
     try {
-      const response = await waApi.sendTestMedia(recipient, mediaUrl, mediaType)
+      const response = await waApi.sendTestMedia(
+        recipient,
+        mediaUrl,
+        mediaType,
+      );
       setResult({
         success: true,
-        message: `✅ Media sent successfully! ID: ${response.message_id || 'N/A'}`,
-      })
-      setMediaUrl('')
+        message: `✅ Media sent successfully! ID: ${response.message_id || "N/A"}`,
+      });
+      setMediaUrl("");
     } catch (error: any) {
       setResult({
         success: false,
         message: `❌ Failed to send media: ${error.message}`,
-      })
+      });
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,15 +85,16 @@ export default function TestPage() {
       </div>
 
       <p className="text-gray-600">
-        Send test messages to verify your WhatsApp connection is working properly.
+        Send test messages to verify your WhatsApp connection is working
+        properly.
       </p>
 
       {result && (
         <div
           className={`p-4 rounded-md ${
             result.success
-              ? 'bg-green-50 border border-green-200 text-green-800'
-              : 'bg-red-50 border border-red-200 text-red-800'
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
           }`}
         >
           {result.message}
@@ -108,7 +124,9 @@ export default function TestPage() {
 
       {/* Text Message Form */}
       <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">💬 Send Text Message</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          💬 Send Text Message
+        </h3>
         <form onSubmit={handleSendText} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -127,14 +145,16 @@ export default function TestPage() {
             disabled={sending || !recipient || !message}
             className="btn btn-primary"
           >
-            {sending ? '📤 Sending...' : '📤 Send Text Message'}
+            {sending ? "📤 Sending..." : "📤 Send Text Message"}
           </button>
         </form>
       </div>
 
       {/* Media Message Form */}
       <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">📎 Send Media</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          📎 Send Media
+        </h3>
         <form onSubmit={handleSendMedia} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -171,7 +191,7 @@ export default function TestPage() {
             disabled={sending || !recipient || !mediaUrl}
             className="btn btn-primary"
           >
-            {sending ? '📤 Sending...' : '📤 Send Media'}
+            {sending ? "📤 Sending..." : "📤 Send Media"}
           </button>
         </form>
       </div>
@@ -180,14 +200,19 @@ export default function TestPage() {
       <div className="card bg-blue-50 border-blue-200">
         <h3 className="text-lg font-medium text-blue-900 mb-2">💡 Tips</h3>
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-          <li>Phone numbers should include country code (e.g., 31612345678 for Netherlands)</li>
+          <li>
+            Phone numbers should include country code (e.g., 31612345678 for
+            Netherlands)
+          </li>
           <li>Do not include + or spaces in phone numbers</li>
           <li>For groups, find the Group ID in the Chats tab after syncing</li>
-          <li>Media URLs must be publicly accessible (not behind authentication)</li>
+          <li>
+            Media URLs must be publicly accessible (not behind authentication)
+          </li>
           <li>Supported image formats: JPG, PNG, GIF, WebP</li>
           <li>Supported document formats: PDF, DOC, DOCX, XLS, XLSX, etc.</li>
         </ul>
       </div>
     </div>
-  )
+  );
 }

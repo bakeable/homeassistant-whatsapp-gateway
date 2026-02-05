@@ -44,7 +44,7 @@ automation:
     action:
       - service: rest_command.send_whatsapp_message
         data:
-          target: "1234567890"  # Phone number (or chat ID)
+          target: "1234567890" # Phone number (or chat ID)
           message: "🚨 Motion detected at the front door!"
           title: "Security Alert"
 
@@ -64,13 +64,13 @@ automation:
 
 ### Message Format
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `target` | Yes | Phone number (e.g., `1234567890`) or WhatsApp ID (e.g., `1234567890@s.whatsapp.net`) |
-| `message` | Yes | The message text to send |
-| `title` | No | Optional title (displayed in **bold** at the top) |
-| `data.image` | No | URL of an image to send |
-| `data.document` | No | URL of a document to send |
+| Parameter       | Required | Description                                                                          |
+| --------------- | -------- | ------------------------------------------------------------------------------------ |
+| `target`        | Yes      | Phone number (e.g., `1234567890`) or WhatsApp ID (e.g., `1234567890@s.whatsapp.net`) |
+| `message`       | Yes      | The message text to send                                                             |
+| `title`         | No       | Optional title (displayed in **bold** at the top)                                    |
+| `data.image`    | No       | URL of an image to send                                                              |
+| `data.document` | No       | URL of a document to send                                                            |
 
 ### Sending to Groups
 

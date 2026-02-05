@@ -1,18 +1,18 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
-import ChatsPage from './pages/Chats'
-import LogsPage from './pages/Logs'
-import RulesPage from './pages/Rules'
-import SetupPage from './pages/Setup'
-import TestPage from './pages/Test'
+import { NavLink, Route, Routes } from "react-router-dom";
+import ChatsPage from "./pages/Chats";
+import LogsPage from "./pages/Logs";
+import RulesPage from "./pages/Rules";
+import SetupPage from "./pages/Setup";
+import TestPage from "./pages/Test";
 
 function App() {
   const tabs = [
-    { path: '/', label: 'Setup', icon: '⚙️' },
-    { path: '/chats', label: 'Chats', icon: '💬' },
-    { path: '/rules', label: 'Rules', icon: '📋' },
-    { path: '/test', label: 'Test', icon: '🧪' },
-    { path: '/logs', label: 'Logs', icon: '📊' },
-  ]
+    { path: "/", label: "Setup", icon: "⚙️" },
+    { path: "/chats", label: "Chats", icon: "💬" },
+    { path: "/rules", label: "Rules", icon: "📋" },
+    { path: "/test", label: "Test", icon: "🧪" },
+    { path: "/logs", label: "Logs", icon: "📊" },
+  ];
 
   return (
     <div className="min-h-screen bg-ha-background">
@@ -34,12 +34,12 @@ function App() {
               <NavLink
                 key={tab.path}
                 to={tab.path}
-                end={tab.path === '/'}
+                end={tab.path === "/"}
                 className={({ isActive }) =>
                   `px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                     isActive
-                      ? 'border-wa-dark text-wa-dark'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? "border-wa-dark text-wa-dark"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`
                 }
               >
@@ -62,7 +62,7 @@ function App() {
         </Routes>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
